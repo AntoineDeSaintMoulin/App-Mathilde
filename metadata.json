@@ -1,0 +1,5 @@
+{
+  "name": "1MA - Gestion Pédagogique Primaire",
+  "description": "Une application complète pour les enseignants du primaire : gestion des activités, suivi des progrès des élèves, commentaires hebdomadaires par cycles de 8 semaines et assistant IA pour les bulletins.",
+  "requestFramePermissions": []
+}
