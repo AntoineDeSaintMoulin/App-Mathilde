@@ -184,7 +184,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
               <div className={`h-2 w-full rounded-t-2xl ${subjectInfo?.color || 'bg-slate-300'}`} />
               <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-3">
-                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${subjectInfo?.color} text-white flex items-center gap-1`}
+                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${subjectInfo?.color} text-white flex items-center gap-1`}>
                     {subjectInfo?.icon} {subjectInfo?.label}
                   </span>
                   <div className="flex gap-2">
