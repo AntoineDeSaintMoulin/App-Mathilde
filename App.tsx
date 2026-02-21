@@ -24,11 +24,17 @@ import StudentProfileModal from './components/StudentProfileModal';
 type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia';
 
 const App: React.FC = () => {
-  const [data, setData] = useState<AppData>(loadData());
+  const [data, setData] = useState<AppData>({
+  students: [], activities: [], evaluations: [], weeklyComments: [], aiReports: []
+  });
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
 
+  useEffect(() => {
+    loadData().then(setData);
+  }, []);
+  
   useEffect(() => {
     saveData(data);
   }, [data]);
