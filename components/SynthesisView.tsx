@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { BarChart3, FileDown, GraduationCap, TrendingUp, Search, Info, Sparkles } from 'lucide-react';
+import { BarChart3, FileDown, TrendingUp, Search, Sparkles } from 'lucide-react';
 import { AppData, Subject } from '../types';
 import { SUBJECTS, getGradeConfig } from '../constants';
 import { exportToCSV } from '../utils/storage';
@@ -19,11 +18,16 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
       const activity = data.activities.find(a => a.id === e.activityId);
       return activity?.subject === subject;
     });
-
     if (studentEvals.length === 0) return null;
-
     const totalScore = studentEvals.reduce((acc, curr) => acc + curr.grade, 0);
     return parseFloat((totalScore / studentEvals.length).toFixed(1));
+  };
+
+  const getGlobalAverage = (studentId: string) => {
+    const allEvals = data.evaluations.filter(e => e.studentId === studentId && e.isPresent);
+    if (allEvals.length === 0) return null;
+    const total = allEvals.reduce((acc, curr) => acc + curr.grade, 0);
+    return parseFloat((total / allEvals.length).toFixed(1));
   };
 
   const handleExport = () => {
@@ -31,6 +35,7 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
       const studentReport = data.aiReports.find(r => r.studentId === student.id && r.cycle === selectedCycle);
       const row: any = {
         'Élève': `${student.firstName} ${student.lastName}`,
+        'Moyenne Globale': getGlobalAverage(student.id) ?? '-',
         'Commentaire Global IA': studentReport?.content || 'Non généré',
       };
       SUBJECTS.forEach(s => {
@@ -42,7 +47,7 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
     exportToCSV(exportData, `synthese-1MA-trimestre-${selectedCycle}`);
   };
 
-  const filteredStudents = data.students.filter(s => 
+  const filteredStudents = data.students.filter(s =>
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -55,26 +60,26 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
           </h2>
           <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Moyennes par trimestre</p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input 
-              type="text" 
-              placeholder="Chercher..." 
+            <input
+              type="text"
+              placeholder="Chercher..."
               className="pl-9 pr-4 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 w-40 bg-slate-50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <select 
+          <select
             className="p-2 border rounded-lg text-sm bg-blue-50 font-bold text-blue-800 outline-none"
             value={selectedCycle}
             onChange={(e) => setSelectedCycle(parseInt(e.target.value))}
           >
             {[1, 2, 3].map(c => <option key={c} value={c}>Trimestre {c}</option>)}
           </select>
-          <button 
+          <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-all shadow-md"
           >
@@ -103,10 +108,19 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
             <tbody className="divide-y text-sm">
               {filteredStudents.map(student => {
                 const studentReport = data.aiReports.find(r => r.studentId === student.id && r.cycle === selectedCycle);
+                const globalAvg = getGlobalAverage(student.id);
+                const globalConfig = globalAvg !== null ? getGradeConfig(globalAvg) : null;
                 return (
                   <tr key={student.id} className="hover:bg-blue-50/30 transition-colors group">
                     <td className="p-4 font-bold text-slate-700 sticky left-0 bg-white group-hover:bg-blue-50/30 z-10 border-r border-slate-100">
-                      {student.firstName} {student.lastName}
+                      <div className="flex flex-col gap-1">
+                        <span>{student.firstName} {student.lastName}</span>
+                        {globalAvg !== null && (
+                          <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-white text-[10px] font-black ${globalConfig?.color} w-fit`}>
+                            <TrendingUp size={10} /> {globalAvg}/10
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4 align-top border-r border-slate-50">
                       {studentReport ? (
@@ -115,7 +129,7 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
                         </p>
                       ) : (
                         <div className="flex items-center gap-2 text-slate-300 text-[10px] italic">
-                          <Sparkles size={12} /> 
+                          <Sparkles size={12} />
                           <span>À générer...</span>
                         </div>
                       )}
