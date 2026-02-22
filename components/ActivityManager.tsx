@@ -127,7 +127,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
       </div>
 
       {/* Compteur de résultats */}
-      {(searchText || searchSubject) && (
+      {(searchText || searchSubjects.length > 0) && (
         <p className="text-sm text-slate-400 italic">
           {filteredActivities.length} activité{filteredActivities.length !== 1 ? 's' : ''} trouvée{filteredActivities.length !== 1 ? 's' : ''}
         </p>
