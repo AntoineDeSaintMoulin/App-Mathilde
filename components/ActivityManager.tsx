@@ -203,4 +203,80 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
                 onChange={e => setFormData({...formData, objective: e.target.value})}
               />
             </div>
-            <div className="md:col
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-sm font-medium text-slate-700">Description / Déroulement</label>
+              <textarea
+                className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 h-24 bg-slate-50"
+                value={formData.description}
+                onChange={e => setFormData({...formData, description: e.target.value})}
+              />
+            </div>
+            <div className="flex justify-end gap-3 md:col-span-2 pt-4">
+              <button type="button" onClick={closeForm} className="px-6 py-2.5 text-slate-600 font-medium hover:text-slate-800">Annuler</button>
+              <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium shadow-md hover:bg-blue-700 transition-all">
+                {editingId ? 'Mettre à jour' : 'Enregistrer l\'activité'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredActivities.map(activity => {
+          const subjectInfo = SUBJECTS.find(s => s.value === activity.subject);
+          return (
+            <div
+              key={activity.id}
+              className="bg-white rounded-2xl border hover:shadow-lg transition-all cursor-pointer group flex flex-col"
+              onClick={() => onSelect(activity)}
+            >
+              <div className={`h-2 w-full rounded-t-2xl ${subjectInfo?.color || 'bg-slate-300'}`} />
+              <div className="p-5 flex-1">
+                <div className="flex justify-between items-start mb-3">
+                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${subjectInfo?.color} text-white flex items-center gap-1`}>
+                    {subjectInfo?.icon} {subjectInfo?.label}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEditForm(activity); }}
+                      className="text-slate-300 hover:text-blue-500 transition-colors"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
+                      className="text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+                <h3 className="font-bold text-lg mb-1">{activity.title}</h3>
+                <div className="text-slate-500 text-sm flex items-center gap-4 mb-4">
+                  <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(activity.date).toLocaleDateString('fr-FR')}</span>
+                  <span className="flex items-center gap-1"><Target size={14} /> {activity.domain}</span>
+                </div>
+                {activity.objective && (
+                  <p className="text-slate-600 text-sm line-clamp-2 italic mb-4">
+                    "{activity.objective}"
+                  </p>
+                )}
+                <div className="flex items-center justify-between pt-4 border-t mt-auto">
+                  <span className="text-xs text-slate-400">Difficulté: {activity.difficulty}/5</span>
+                  <span className="text-blue-600 text-sm font-semibold group-hover:underline">Évaluer →</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {filteredActivities.length === 0 && (
+          <div className="col-span-3 text-center py-12 text-slate-400 italic">
+            Aucune activité ne correspond à votre recherche.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default ActivityManager;
