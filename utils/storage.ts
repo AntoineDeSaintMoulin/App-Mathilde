@@ -11,18 +11,18 @@ const DEFAULT_DATA: AppData = {
   aiReports: [],
 };
 
-const tableMap: Record<keyof AppData, string> = {
-  students: 'students',
-  activities: 'activities',
-  evaluations: 'evaluations',
-  weeklyComments: 'weekly_comments',
-  aiReports: 'ai_reports',
-};
-
 export const loadData = async (): Promise<AppData> => {
   const result: AppData = { ...DEFAULT_DATA };
 
-  for (const [key, table] of Object.entries(tableMap)) {
+  const tables: { key: keyof AppData; table: string }[] = [
+    { key: 'students', table: 'students' },
+    { key: 'activities', table: 'activities' },
+    { key: 'evaluations', table: 'evaluations' },
+    { key: 'weeklyComments', table: 'weekly_comments' },
+    { key: 'aiReports', table: 'ai_reports' },
+  ];
+
+  for (const { key, table } of tables) {
     const { data, error } = await supabase
       .from(table)
       .select('data')
@@ -37,14 +37,36 @@ export const loadData = async (): Promise<AppData> => {
 };
 
 export const saveData = async (data: AppData): Promise<void> => {
-  for (const [key, table] of Object.entries(tableMap)) {
-    const items = (data as any)[key] as any[];
+  // Données avec ID (students, activities, aiReports)
+  const withId: { key: keyof AppData; table: string }[] = [
+    { key: 'students', table: 'students' },
+    { key: 'activities', table: 'activities' },
+    { key: 'aiReports', table: 'ai_reports' },
+  ];
 
+  for (const { key, table } of withId) {
+    const items = (data as any)[key] as any[];
     for (const item of items) {
       await supabase
         .from(table)
         .upsert({ id: item.id, user_id: USER_ID, data: item });
     }
+  }
+
+  // Évaluations — clé composite studentId + activityId
+  for (const eval_ of data.evaluations) {
+    const id = `${eval_.studentId}_${eval_.activityId}`;
+    await supabase
+      .from('evaluations')
+      .upsert({ id, user_id: USER_ID, data: eval_ });
+  }
+
+  // Commentaires hebdo — clé composite studentId + cycle + week
+  for (const comment of data.weeklyComments) {
+    const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
+    await supabase
+      .from('weekly_comments')
+      .upsert({ id, user_id: USER_ID, data: comment });
   }
 };
 
