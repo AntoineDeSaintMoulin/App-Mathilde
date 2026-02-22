@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { Plus, Calendar, BookOpen, Target, List, Box, Trash2, Edit3 } from 'lucide-react';
+import { Plus, Calendar, BookOpen, Target, List, Trash2, Edit3, Search } from 'lucide-react';
 import { Activity, Subject } from '../types';
 import { SUBJECTS, DOMAINS } from '../constants';
 
@@ -15,7 +14,9 @@ interface Props {
 const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelete, onSelect }) => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  
+  const [searchText, setSearchText] = useState('');
+  const [searchSubject, setSearchSubject] = useState<Subject | ''>('');
+
   const [formData, setFormData] = useState<Omit<Activity, 'id'>>({
     title: '',
     date: new Date().toISOString().split('T')[0],
@@ -26,6 +27,14 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
     objective: '',
     competencies: '',
     material: ''
+  });
+
+  const filteredActivities = activities.filter(activity => {
+    const matchesText = activity.title.toLowerCase().includes(searchText.toLowerCase()) ||
+      activity.domain.toLowerCase().includes(searchText.toLowerCase()) ||
+      activity.description.toLowerCase().includes(searchText.toLowerCase());
+    const matchesSubject = searchSubject === '' || activity.subject === searchSubject;
+    return matchesText && matchesSubject;
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,13 +85,53 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
         <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
           <List className="text-blue-600" /> Vos Fiches Activités
         </h2>
-        <button 
+        <button
           onClick={() => setIsFormOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-sm"
         >
           <Plus size={18} /> Nouvelle activité
         </button>
       </div>
+
+      {/* Barres de recherche */}
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Rechercher par nom, domaine, description..."
+            className="w-full pl-9 pr-4 py-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm text-sm"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSearchSubject('')}
+            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${searchSubject === '' ? 'bg-slate-800 text-white' : 'bg-white border text-slate-500 hover:bg-slate-50'}`}
+          >
+            Toutes
+          </button>
+          {SUBJECTS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => setSearchSubject(searchSubject === s.value ? '' : s.value)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
+                searchSubject === s.value ? `${s.color} text-white shadow-md` : 'bg-white border text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              {s.icon} {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Compteur de résultats */}
+      {(searchText || searchSubject) && (
+        <p className="text-sm text-slate-400 italic">
+          {filteredActivities.length} activité{filteredActivities.length !== 1 ? 's' : ''} trouvée{filteredActivities.length !== 1 ? 's' : ''}
+        </p>
+      )}
 
       {isFormOpen && (
         <div className="bg-white p-8 rounded-2xl border shadow-xl animate-in fade-in zoom-in duration-200">
@@ -92,7 +141,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Titre de l'activité</label>
-              <input 
+              <input
                 required
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
                 value={formData.title}
@@ -101,7 +150,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Date</label>
-              <input 
+              <input
                 type="date"
                 required
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
@@ -111,7 +160,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Matière</label>
-              <select 
+              <select
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
                 value={formData.subject}
                 onChange={e => setFormData({...formData, subject: e.target.value as Subject, domain: ''})}
@@ -121,7 +170,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Domaine de compétence</label>
-              <input 
+              <input
                 list="domain-suggestions"
                 placeholder="Ex: Calcul mental ou nouveau domaine..."
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
@@ -134,8 +183,8 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Niveau de difficulté (1-5)</label>
-              <input 
-                type="range" min="1" max="5" 
+              <input
+                type="range" min="1" max="5"
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 value={formData.difficulty}
                 onChange={e => setFormData({...formData, difficulty: parseInt(e.target.value) as any})}
@@ -148,81 +197,10 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Objectif pédagogique (optionnel)</label>
-              <input 
+              <input
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
                 value={formData.objective}
                 onChange={e => setFormData({...formData, objective: e.target.value})}
               />
             </div>
-            <div className="md:col-span-2 space-y-2">
-              <label className="text-sm font-medium text-slate-700">Description / Déroulement</label>
-              <textarea 
-                className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 h-24 bg-slate-50"
-                value={formData.description}
-                onChange={e => setFormData({...formData, description: e.target.value})}
-              />
-            </div>
-            <div className="flex justify-end gap-3 md:col-span-2 pt-4">
-              <button type="button" onClick={closeForm} className="px-6 py-2.5 text-slate-600 font-medium hover:text-slate-800">Annuler</button>
-              <button type="submit" className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-medium shadow-md hover:bg-blue-700 transition-all">
-                {editingId ? 'Mettre à jour' : 'Enregistrer l\'activité'}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {activities.map(activity => {
-          const subjectInfo = SUBJECTS.find(s => s.value === activity.subject);
-          return (
-            <div 
-              key={activity.id} 
-              className="bg-white rounded-2xl border hover:shadow-lg transition-all cursor-pointer group flex flex-col"
-              onClick={() => onSelect(activity)}
-            >
-              <div className={`h-2 w-full rounded-t-2xl ${subjectInfo?.color || 'bg-slate-300'}`} />
-              <div className="p-5 flex-1">
-                <div className="flex justify-between items-start mb-3">
-                  <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${subjectInfo?.color} text-white flex items-center gap-1`}>
-                    {subjectInfo?.icon} {subjectInfo?.label}
-                  </span>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); openEditForm(activity); }}
-                      className="text-slate-300 hover:text-blue-500 transition-colors"
-                    >
-                      <Edit3 size={16} />
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); onDelete(activity.id); }}
-                      className="text-slate-300 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                <h3 className="font-bold text-lg mb-1">{activity.title}</h3>
-                <div className="text-slate-500 text-sm flex items-center gap-4 mb-4">
-                  <span className="flex items-center gap-1"><Calendar size={14} /> {new Date(activity.date).toLocaleDateString('fr-FR')}</span>
-                  <span className="flex items-center gap-1"><Target size={14} /> {activity.domain}</span>
-                </div>
-                {activity.objective && (
-                  <p className="text-slate-600 text-sm line-clamp-2 italic mb-4">
-                    "{activity.objective}"
-                  </p>
-                )}
-                <div className="flex items-center justify-between pt-4 border-t mt-auto">
-                  <span className="text-xs text-slate-400">Difficulté: {activity.difficulty}/5</span>
-                  <span className="text-blue-600 text-sm font-semibold group-hover:underline">Évaluer →</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-export default ActivityManager;
+            <div className="md:col
