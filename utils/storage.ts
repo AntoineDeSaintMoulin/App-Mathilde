@@ -37,7 +37,6 @@ export const loadData = async (): Promise<AppData> => {
 };
 
 export const saveData = async (data: AppData): Promise<void> => {
-  // Données avec ID (students, activities uniquement)
   const withId: { key: keyof AppData; table: string }[] = [
     { key: 'students', table: 'students' },
     { key: 'activities', table: 'activities' },
@@ -52,7 +51,6 @@ export const saveData = async (data: AppData): Promise<void> => {
     }
   }
 
-  // Évaluations — clé composite studentId + activityId
   for (const eval_ of data.evaluations) {
     const id = `${eval_.studentId}_${eval_.activityId}`;
     await supabase
@@ -60,7 +58,6 @@ export const saveData = async (data: AppData): Promise<void> => {
       .upsert({ id, user_id: USER_ID, data: eval_ });
   }
 
-  // Commentaires hebdo — clé composite studentId + cycle + week
   for (const comment of data.weeklyComments) {
     const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
     await supabase
@@ -68,28 +65,11 @@ export const saveData = async (data: AppData): Promise<void> => {
       .upsert({ id, user_id: USER_ID, data: comment });
   }
 
-  // Rapports IA — clé composite studentId + cycle
   for (const report of data.aiReports) {
     const id = `${report.studentId}_${report.cycle}`;
     await supabase
       .from('ai_reports')
       .upsert({ id, user_id: USER_ID, data: report });
-  }
-};
-  // Évaluations — clé composite studentId + activityId
-  for (const eval_ of data.evaluations) {
-    const id = `${eval_.studentId}_${eval_.activityId}`;
-    await supabase
-      .from('evaluations')
-      .upsert({ id, user_id: USER_ID, data: eval_ });
-  }
-
-  // Commentaires hebdo — clé composite studentId + cycle + week
-  for (const comment of data.weeklyComments) {
-    const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
-    await supabase
-      .from('weekly_comments')
-      .upsert({ id, user_id: USER_ID, data: comment });
   }
 };
 
