@@ -15,7 +15,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
-  const [searchSubject, setSearchSubject] = useState<Subject | ''>('');
+  const [searchSubjects, setSearchSubjects] = useState<Subject[]>([]);
 
   const [formData, setFormData] = useState<Omit<Activity, 'id'>>({
     title: '',
@@ -33,7 +33,7 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
     const matchesText = activity.title.toLowerCase().includes(searchText.toLowerCase()) ||
       activity.domain.toLowerCase().includes(searchText.toLowerCase()) ||
       activity.description.toLowerCase().includes(searchText.toLowerCase());
-    const matchesSubject = searchSubject === '' || activity.subject === searchSubject;
+    const matchesSubject = searchSubjects.length === 0 || searchSubjects.includes(activity.subject);
     return matchesText && matchesSubject;
   });
 
@@ -105,25 +105,25 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             onChange={e => setSearchText(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setSearchSubject('')}
-            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${searchSubject === '' ? 'bg-slate-800 text-white' : 'bg-white border text-slate-500 hover:bg-slate-50'}`}
-          >
-            Toutes
-          </button>
-          {SUBJECTS.map(s => (
-            <button
-              key={s.value}
-              onClick={() => setSearchSubject(searchSubject === s.value ? '' : s.value)}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
-                searchSubject === s.value ? `${s.color} text-white shadow-md` : 'bg-white border text-slate-500 hover:bg-slate-50'
-              }`}
-            >
-              {s.icon} {s.label}
-            </button>
-          ))}
-        </div>
+          <div className="flex gap-2 flex-wrap">
+            {SUBJECTS.map(s => (
+              <button
+                key={s.value}
+                onClick={() => setSearchSubjects(prev =>
+                  prev.includes(s.value)
+                    ? prev.filter(x => x !== s.value)
+                    : [...prev, s.value]
+                )}
+                className={`px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
+                  searchSubjects.includes(s.value)
+                    ? `${s.color} text-white shadow-md`
+                    : 'bg-white border text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                {s.icon} {s.label}
+              </button>
+            ))}
+          </div>
       </div>
 
       {/* Compteur de résultats */}
