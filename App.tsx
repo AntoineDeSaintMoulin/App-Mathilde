@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -7,12 +6,12 @@ import {
   LayoutDashboard, 
   Sparkles, 
   Settings,
-  GraduationCap
+  GraduationCap,
+  FileText
 } from 'lucide-react';
-import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport } from './types';
+import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from './types';
 import { loadData, saveData } from './utils/storage';
 
-// Lazy load components for performance
 import StudentList from './components/StudentList';
 import ActivityManager from './components/ActivityManager';
 import EvaluationModal from './components/EvaluationModal';
@@ -20,12 +19,13 @@ import WeeklyTracker from './components/WeeklyTracker';
 import SynthesisView from './components/SynthesisView';
 import AssistantIA from './components/AssistantIA';
 import StudentProfileModal from './components/StudentProfileModal';
+import NotesManager from './components/NotesManager';
 
-type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia';
+type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes';
 
 const App: React.FC = () => {
   const [data, setData] = useState<AppData>({
-  students: [], activities: [], evaluations: [], weeklyComments: [], aiReports: []
+    students: [], activities: [], evaluations: [], weeklyComments: [], aiReports: [], notes: []
   });
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
@@ -34,7 +34,7 @@ const App: React.FC = () => {
   useEffect(() => {
     loadData().then(setData);
   }, []);
-  
+
   useEffect(() => {
     saveData(data);
   }, [data]);
@@ -106,6 +106,29 @@ const App: React.FC = () => {
     });
   };
 
+  const addNote = (n: Omit<Note, 'id' | 'updatedAt'>) => {
+    const newNote: Note = { 
+      ...n, 
+      id: Math.random().toString(36).substr(2, 9), 
+      updatedAt: new Date().toISOString() 
+    };
+    setData(prev => ({ ...prev, notes: [...prev.notes, newNote] }));
+  };
+
+  const updateNote = (updated: Note) => {
+    setData(prev => ({
+      ...prev,
+      notes: prev.notes.map(n => n.id === updated.id ? updated : n)
+    }));
+  };
+
+  const deleteNote = (id: string) => {
+    setData(prev => ({
+      ...prev,
+      notes: prev.notes.filter(n => n.id !== id)
+    }));
+  };
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
       <nav className="w-full md:w-64 bg-slate-900 text-slate-400 p-6 flex flex-col shrink-0">
@@ -143,6 +166,12 @@ const App: React.FC = () => {
             onClick={() => setActiveTab('hebdo')} 
             icon={<CalendarDays size={20} />} 
             label="Suivi Hebdo" 
+          />
+          <NavItem
+            active={activeTab === 'notes'}
+            onClick={() => setActiveTab('notes')}
+            icon={<FileText size={20} />}
+            label="Notes"
           />
           <div className="pt-4 mt-4 border-t border-slate-800">
             <NavItem 
@@ -195,6 +224,15 @@ const App: React.FC = () => {
               students={data.students} 
               comments={data.weeklyComments} 
               onSaveComment={saveWeeklyComment}
+            />
+          )}
+
+          {activeTab === 'notes' && (
+            <NotesManager
+              notes={data.notes}
+              onAdd={addNote}
+              onUpdate={updateNote}
+              onDelete={deleteNote}
             />
           )}
 
