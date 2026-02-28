@@ -53,12 +53,12 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
   const sortedAndFilteredStudents = data.students
     .filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
-      if (sortOption === 'alpha-asc') {
-        return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
-      }
-      if (sortOption === 'alpha-desc') {
-        return `${b.lastName} ${b.firstName}`.localeCompare(`${a.lastName} ${a.firstName}`);
-      }
+        if (sortOption === 'alpha-asc') {
+          return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+        }
+        if (sortOption === 'alpha-desc') {
+          return `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`);
+        }
       const avgA = getGlobalAverage(a.id) ?? -1;
       const avgB = getGlobalAverage(b.id) ?? -1;
       if (sortOption === 'grade-asc') return avgA - avgB;
