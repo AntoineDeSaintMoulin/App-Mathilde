@@ -9,6 +9,7 @@ const DEFAULT_DATA: AppData = {
   evaluations: [],
   weeklyComments: [],
   aiReports: [],
+  notes: [],
 };
 
 export const loadData = async (): Promise<AppData> => {
@@ -20,6 +21,7 @@ export const loadData = async (): Promise<AppData> => {
     { key: 'evaluations', table: 'evaluations' },
     { key: 'weeklyComments', table: 'weekly_comments' },
     { key: 'aiReports', table: 'ai_reports' },
+    { key: 'notes', table: 'notes' },
   ];
 
   for (const { key, table } of tables) {
@@ -40,6 +42,7 @@ export const saveData = async (data: AppData): Promise<void> => {
   const withId: { key: keyof AppData; table: string }[] = [
     { key: 'students', table: 'students' },
     { key: 'activities', table: 'activities' },
+    { key: 'notes', table: 'notes' },
   ];
 
   for (const { key, table } of withId) {
