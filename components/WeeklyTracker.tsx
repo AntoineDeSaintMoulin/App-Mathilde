@@ -22,8 +22,8 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
 
   const sortedStudents = [...students].sort((a, b) =>
     sortAlpha
-      ? `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`)
-      : `${b.lastName} ${b.firstName}`.localeCompare(`${a.lastName} ${a.firstName}`)
+      ? `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`)
+      : `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`)
   );
 
   return (
