@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, FileDown, TrendingUp, Search, Sparkles } from 'lucide-react';
+import { BarChart3, FileDown, TrendingUp, Search, Sparkles, ArrowUpDown } from 'lucide-react';
 import { AppData, Subject } from '../types';
 import { SUBJECTS, getGradeConfig } from '../constants';
 import { exportToCSV } from '../utils/storage';
@@ -8,9 +8,12 @@ interface Props {
   data: AppData;
 }
 
+type SortOption = 'alpha-asc' | 'alpha-desc' | 'grade-asc' | 'grade-desc';
+
 const SynthesisView: React.FC<Props> = ({ data }) => {
   const [selectedCycle, setSelectedCycle] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortOption, setSortOption] = useState<SortOption>('alpha-asc');
 
   const getStudentAverage = (studentId: string, subject: Subject) => {
     const studentEvals = data.evaluations.filter(e => {
@@ -47,9 +50,20 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
     exportToCSV(exportData, `synthese-1MA-trimestre-${selectedCycle}`);
   };
 
-  const filteredStudents = data.students.filter(s =>
-    `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const sortedAndFilteredStudents = data.students
+    .filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => {
+      if (sortOption === 'alpha-asc') {
+        return `${a.lastName} ${a.firstName}`.localeCompare(`${b.lastName} ${b.firstName}`);
+      }
+      if (sortOption === 'alpha-desc') {
+        return `${b.lastName} ${b.firstName}`.localeCompare(`${a.lastName} ${a.firstName}`);
+      }
+      const avgA = getGlobalAverage(a.id) ?? -1;
+      const avgB = getGlobalAverage(b.id) ?? -1;
+      if (sortOption === 'grade-asc') return avgA - avgB;
+      return avgB - avgA;
+    });
 
   return (
     <div className="space-y-6">
@@ -72,6 +86,22 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+
+          {/* Tri */}
+          <div className="flex items-center gap-2 bg-slate-50 border rounded-lg px-3 py-2">
+            <ArrowUpDown size={14} className="text-slate-400" />
+            <select
+              className="text-sm font-bold text-slate-700 bg-transparent outline-none cursor-pointer"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as SortOption)}
+            >
+              <option value="alpha-asc">A → Z</option>
+              <option value="alpha-desc">Z → A</option>
+              <option value="grade-desc">Meilleurs en premier</option>
+              <option value="grade-asc">Plus faibles en premier</option>
+            </select>
+          </div>
+
           <select
             className="p-2 border rounded-lg text-sm bg-blue-50 font-bold text-blue-800 outline-none"
             value={selectedCycle}
@@ -106,7 +136,7 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
               </tr>
             </thead>
             <tbody className="divide-y text-sm">
-              {filteredStudents.map(student => {
+              {sortedAndFilteredStudents.map(student => {
                 const studentReport = data.aiReports.find(r => r.studentId === student.id && r.cycle === selectedCycle);
                 const globalAvg = getGlobalAverage(student.id);
                 const globalConfig = globalAvg !== null ? getGradeConfig(globalAvg) : null;
