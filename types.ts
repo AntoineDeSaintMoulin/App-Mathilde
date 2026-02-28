@@ -51,4 +51,19 @@ export interface AppData {
   evaluations: Evaluation[];
   weeklyComments: WeeklyComment[];
   aiReports: AIReport[];
+  notes: Note[];
+}
+
+export interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  todos: TodoItem[];
+  updatedAt: string;
 }
