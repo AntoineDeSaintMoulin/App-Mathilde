@@ -99,14 +99,14 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
                           </button>
                         </div>
                       ) : (
-                        <div
-                          onClick={() => setEditingComment({ sid: student.id, week, content: getComment(student.id, week) })}
-                          className={`h-full p-2 text-[11px] leading-snug transition-all rounded-xl border border-transparent ${
-                            getComment(student.id, week)
-                              ? 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-200 italic'
-                              : 'text-transparent hover:bg-slate-50 hover:text-slate-300'
-                          }`}
-                        >
+                       <div 
+                            onClick={() => setEditingComment({ sid: student.id, week, content: getComment(student.id, week) })}
+                            className={`h-full p-2 text-[11px] leading-snug transition-all rounded-xl border border-transparent overflow-y-auto ${
+                              getComment(student.id, week) 
+                                ? 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-200 italic' 
+                                : 'text-transparent hover:bg-slate-50 hover:text-slate-300'
+                            }`}
+                          >
                           {getComment(student.id, week) || 'Ajouter...'}
                         </div>
                       )}
