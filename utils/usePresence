@@ -18,23 +18,22 @@ export const usePresence = () => {
     };
 
     const check = async () => {
-      // Nettoie les sessions inactives depuis plus de 2 minutes
+      // Nettoie toutes les sessions inactives depuis plus de 2 minutes
       await supabase
         .from('presence')
         .delete()
         .eq('user_id', USER_ID)
         .lt('last_seen', new Date(Date.now() - 2 * 60 * 1000).toISOString());
 
-      // Récupère toutes les sessions actives
+      // Récupère toutes les sessions actives restantes
       const { data } = await supabase
         .from('presence')
-        .select('session_id, last_seen')
+        .select('session_id')
         .eq('user_id', USER_ID);
 
       if (data) {
-        const activeSessions = data.filter(s => s.session_id !== SESSION_ID);
         setSessionCount(data.length);
-        setConflict(activeSessions.length > 0);
+        setConflict(data.length > 1);
       }
     };
 
@@ -46,9 +45,8 @@ export const usePresence = () => {
       check();
     }, 30000);
 
-    // Supprime la session à la fermeture
-    const cleanup = async () => {
-      await supabase.from('presence').delete().eq('session_id', SESSION_ID);
+    const cleanup = () => {
+      supabase.from('presence').delete().eq('session_id', SESSION_ID);
     };
 
     window.addEventListener('beforeunload', cleanup);
