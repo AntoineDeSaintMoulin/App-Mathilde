@@ -7,7 +7,8 @@ import {
   Sparkles, 
   Settings,
   GraduationCap,
-  FileText
+  FileText,
+  Shuffle
 } from 'lucide-react';
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from './types';
 import { loadData, saveData } from './utils/storage';
@@ -22,7 +23,9 @@ import StudentProfileModal from './components/StudentProfileModal';
 import NotesManager from './components/NotesManager';
 import { usePresence } from './utils/usePresence';
 
-type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes';
+import LotteryManager from './components/LotteryManager';
+
+type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes' | 'lottery' ;
 
 const App: React.FC = () => {
   const [data, setData] = useState<AppData>({
@@ -232,6 +235,12 @@ const handleSyncClick = async () => {
             label="Suivi Hebdo" 
           />
           <NavItem
+            active={activeTab === 'lottery'}
+            onClick={() => setActiveTab('lottery')}
+            icon={<Shuffle size={20} />}
+            label="Loterie"
+          />
+          <NavItem
             active={activeTab === 'notes'}
             onClick={() => setActiveTab('notes')}
             icon={<FileText size={20} />}
@@ -306,6 +315,13 @@ const handleSyncClick = async () => {
               data={data}
               onSaveReport={saveAIReport}
               existingReports={data.aiReports}
+            />
+          )}
+          {activeTab === 'lottery' && (
+              <LotteryManager
+                students={data.students}
+                activities={data.activities}
+                evaluations={data.evaluations}
             />
           )}
         </div>
