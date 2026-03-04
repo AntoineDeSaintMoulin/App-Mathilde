@@ -29,6 +29,7 @@ const App: React.FC = () => {
     students: [], activities: [], evaluations: [], weeklyComments: [], aiReports: [], notes: []
   });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
@@ -44,7 +45,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (!isLoaded) return;
-    saveData(data);
+    setSaveStatus('saving');
+    saveData(data)
+      .then(() => setSaveStatus('saved'))
+      .catch(() => setSaveStatus('error'));
   }, [data, isLoaded]);
 
   const addStudent = (s: Omit<Student, 'id'>) => {
@@ -137,6 +141,34 @@ const App: React.FC = () => {
     }));
   };
 
+  const handleSyncClick = () => {
+    if (conflict) {
+      window.location.reload();
+    }
+  };
+
+  const syncColor = conflict
+    ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'
+    : saveStatus === 'saving'
+    ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]'
+    : saveStatus === 'error'
+    ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'
+    : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]';
+
+  const syncLabel = conflict
+    ? 'Conflit'
+    : saveStatus === 'saving'
+    ? 'Sync...'
+    : saveStatus === 'error'
+    ? 'Erreur'
+    : 'Sync';
+
+  const syncTextColor = conflict || saveStatus === 'error'
+    ? 'text-red-400'
+    : saveStatus === 'saving'
+    ? 'text-yellow-400'
+    : 'text-emerald-500';
+
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -156,10 +188,20 @@ const App: React.FC = () => {
           <div className="bg-blue-600 p-2 rounded-xl">
             <GraduationCap size={24} />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="font-bold text-2xl leading-tight tracking-tighter">1MA</h1>
             <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Mathilde Lits</p>
           </div>
+          <button
+            onClick={handleSyncClick}
+            title={conflict ? 'Cliquer pour rafraîchir' : saveStatus === 'error' ? 'Erreur de sauvegarde' : 'Synchronisé'}
+            className="flex flex-col items-center gap-1 shrink-0 cursor-pointer"
+          >
+            <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 ${syncColor}`} />
+            <span className={`text-[8px] font-bold uppercase tracking-wider ${syncTextColor}`}>
+              {syncLabel}
+            </span>
+          </button>
         </div>
 
         <div className="space-y-1 flex-1">
@@ -211,18 +253,6 @@ const App: React.FC = () => {
           <div className="flex-1 min-w-0">
             <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Mathilde Lits</p>
             <p className="text-slate-500 italic">Enseignante 1MA</p>
-          </div>
-          <div className="flex flex-col items-center gap-1 shrink-0">
-            <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 shadow-sm ${
-              conflict
-                ? 'bg-red-500 shadow-red-500/50'
-                : 'bg-emerald-500 shadow-emerald-500/50'
-            }`} />
-            <span className={`text-[8px] font-bold uppercase tracking-wider ${
-              conflict ? 'text-red-400' : 'text-emerald-500'
-            }`}>
-              {conflict ? 'Conflit' : 'Sync'}
-            </span>
           </div>
         </div>
       </nav>
