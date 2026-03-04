@@ -33,6 +33,7 @@ const App: React.FC = () => {
   });
   const [isLoaded, setIsLoaded] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [isSyncing, setIsSyncing] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
@@ -145,10 +146,12 @@ const App: React.FC = () => {
   };
 
 const handleSyncClick = async () => {
-  if (conflict) {
+  if (conflict && !isSyncing) {
+    setIsSyncing(true);
     const freshData = await loadData();
     setData(freshData);
     setSaveStatus('saved');
+    setIsSyncing(false);
   }
 };
 
@@ -199,8 +202,9 @@ const handleSyncClick = async () => {
           </div>
           <button
             onClick={handleSyncClick}
+            disabled={isSyncing}
             title={conflict ? 'Cliquer pour rafraîchir' : saveStatus === 'error' ? 'Erreur de sauvegarde' : 'Synchronisé'}
-            className="flex flex-col items-center gap-1 shrink-0 cursor-pointer"
+            className="flex flex-col items-center gap-1 shrink-0 cursor-pointer disabled:opacity-50"
           >
             <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 ${syncColor}`} />
             <span className={`text-[8px] font-bold uppercase tracking-wider ${syncTextColor}`}>
