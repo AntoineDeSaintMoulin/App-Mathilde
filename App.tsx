@@ -20,6 +20,7 @@ import SynthesisView from './components/SynthesisView';
 import AssistantIA from './components/AssistantIA';
 import StudentProfileModal from './components/StudentProfileModal';
 import NotesManager from './components/NotesManager';
+import { usePresence } from './utils/usePresence';
 
 type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes';
 
@@ -30,6 +31,8 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+
+  const { conflict } = usePresence();
 
   useEffect(() => {
     loadData().then(setData);
@@ -131,6 +134,20 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
+
+      {conflict && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-bold">
+          <span>⚠️</span>
+          <span>Une autre session est active ! Les données pourraient être écrasées.</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-2 bg-white text-orange-500 px-3 py-1 rounded-lg text-xs font-black hover:bg-orange-50 transition-colors"
+          >
+            Rafraîchir
+          </button>
+        </div>
+      )}
+
       <nav className="w-full md:w-64 bg-slate-900 text-slate-400 p-6 flex flex-col shrink-0">
         <div className="flex items-center gap-3 text-white mb-10 px-2">
           <div className="bg-blue-600 p-2 rounded-xl">
