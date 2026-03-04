@@ -154,9 +154,9 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
                     </td>
                     <td className="p-4 align-top border-r border-slate-50">
                       {studentReport ? (
-                        <p className="text-[11px] text-slate-600 line-clamp-2 italic bg-slate-50 p-2 rounded-lg border border-slate-100">
-                          "{studentReport.content}"
-                        </p>
+                        <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-lg border border-slate-100 max-h-20 overflow-y-auto">
+                        "{studentReport.content}"
+                          </p>
                       ) : (
                         <div className="flex items-center gap-2 text-slate-300 text-[10px] italic">
                           <Sparkles size={12} />
