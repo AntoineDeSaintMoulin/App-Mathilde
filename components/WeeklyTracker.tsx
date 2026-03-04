@@ -14,6 +14,8 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
   const [sortAlpha, setSortAlpha] = useState(true);
   const [colWidths, setColWidths] = useState<Record<number, number>>({});
   const resizingCol = useRef<{ week: number; startX: number; startWidth: number } | null>(null);
+  const colWidthsRef = useRef<Record<number, number>>({});
+  const thRefs = useRef<Record<number, HTMLTableCellElement | null>>({});
 
   const getComment = (sid: string, week: number) => {
     return comments.find(c => c.studentId === sid && c.cycle === selectedCycle && c.week === week)?.content || '';
@@ -28,27 +30,35 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
       : `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`)
   );
 
-  const handleMouseDown = useCallback((e: React.MouseEvent, week: number) => {
-    e.preventDefault();
-    const currentWidth = colWidths[week] || 160;
-    resizingCol.current = { week, startX: e.clientX, startWidth: currentWidth };
+const handleMouseDown = useCallback((e: React.MouseEvent, week: number) => {
+  e.preventDefault();
+  const currentWidth = colWidthsRef.current[week] || 160;
+  resizingCol.current = { week, startX: e.clientX, startWidth: currentWidth };
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (!resizingCol.current) return;
-      const diff = moveEvent.clientX - resizingCol.current.startX;
-      const newWidth = Math.max(80, resizingCol.current.startWidth + diff);
-      setColWidths(prev => ({ ...prev, [resizingCol.current!.week]: newWidth }));
-    };
+  const handleMouseMove = (moveEvent: MouseEvent) => {
+    if (!resizingCol.current) return;
+    const diff = moveEvent.clientX - resizingCol.current.startX;
+    const newWidth = Math.max(80, resizingCol.current.startWidth + diff);
+    colWidthsRef.current = { ...colWidthsRef.current, [resizingCol.current.week]: newWidth };
 
-    const handleMouseUp = () => {
-      resizingCol.current = null;
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-    };
+    // Met à jour le DOM directement sans passer par React
+    const th = thRefs.current[resizingCol.current.week];
+    if (th) th.style.width = `${newWidth}px`;
+  };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-  }, [colWidths]);
+  const handleMouseUp = () => {
+    if (resizingCol.current) {
+      // Met à jour le state React seulement à la fin du drag
+      setColWidths({ ...colWidthsRef.current });
+    }
+    resizingCol.current = null;
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
+}, []);
 
   return (
     <div className="space-y-6">
