@@ -18,14 +18,12 @@ export const usePresence = () => {
     };
 
     const check = async () => {
-      // Nettoie toutes les sessions inactives depuis plus de 2 minutes
       await supabase
         .from('presence')
         .delete()
         .eq('user_id', USER_ID)
         .lt('last_seen', new Date(Date.now() - 2 * 60 * 1000).toISOString());
 
-      // Récupère toutes les sessions actives restantes
       const { data } = await supabase
         .from('presence')
         .select('session_id')
@@ -40,10 +38,24 @@ export const usePresence = () => {
     register();
     check();
 
+    // Heartbeat toutes les 20 secondes (au lieu de 30)
     const heartbeat = setInterval(() => {
       register();
       check();
-    }, 30000);
+    }, 20000);
+
+    // Realtime — réagit instantanément aux changements dans la table presence
+    const channel = supabase
+      .channel('presence-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'presence',
+        filter: `user_id=eq.${USER_ID}`
+      }, () => {
+        check();
+      })
+      .subscribe();
 
     const cleanup = () => {
       supabase.from('presence').delete().eq('session_id', SESSION_ID);
@@ -53,6 +65,7 @@ export const usePresence = () => {
 
     return () => {
       clearInterval(heartbeat);
+      supabase.removeChannel(channel);
       window.removeEventListener('beforeunload', cleanup);
     };
   }, []);
