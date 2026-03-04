@@ -29,7 +29,6 @@ export const loadData = async (): Promise<AppData> => {
       .from(table)
       .select('data')
       .eq('user_id', USER_ID);
-
     if (!error && data) {
       (result as any)[key] = data.map((row: any) => row.data);
     }
@@ -39,6 +38,17 @@ export const loadData = async (): Promise<AppData> => {
 };
 
 const syncTable = async (table: string, rows: { id: string; user_id: string; data: any }[]) => {
+  // Sécurité : si le tableau entrant est vide, on vérifie d'abord
+  // qu'il n'y a pas de données existantes en base avant de supprimer
+  if (rows.length === 0) {
+    const { data } = await supabase
+      .from(table)
+      .select('id')
+      .eq('user_id', USER_ID)
+      .limit(1);
+    if (data && data.length > 0) return; // Des données existent → on ne touche pas
+  }
+
   await supabase.from(table).delete().eq('user_id', USER_ID);
   if (rows.length > 0) {
     await supabase.from(table).insert(rows);
