@@ -34,7 +34,7 @@ const App: React.FC = () => {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
 
-  const { conflict } = usePresence();
+  const { conflict, sessionCount } = usePresence();
 
   useEffect(() => {
     loadData().then(d => {
@@ -156,12 +156,12 @@ const App: React.FC = () => {
     : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]';
 
   const syncLabel = conflict
-    ? 'Conflit'
-    : saveStatus === 'saving'
-    ? 'Sync...'
-    : saveStatus === 'error'
-    ? 'Erreur'
-    : 'Sync';
+  ? `${sessionCount} sessions`
+  : saveStatus === 'saving'
+  ? 'Sync...'
+  : saveStatus === 'error'
+  ? 'Erreur'
+  : 'Sync';
 
   const syncTextColor = conflict || saveStatus === 'error'
     ? 'text-red-400'
