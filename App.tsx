@@ -141,11 +141,12 @@ const App: React.FC = () => {
     }));
   };
 
-  const handleSyncClick = () => {
-    if (conflict) {
-      window.location.reload();
-    }
-  };
+const handleSyncClick = async () => {
+  if (conflict) {
+    const freshData = await loadData();
+    setData(freshData);
+  }
+};
 
   const syncColor = conflict
     ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'
