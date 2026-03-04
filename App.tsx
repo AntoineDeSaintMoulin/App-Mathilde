@@ -28,6 +28,7 @@ const App: React.FC = () => {
   const [data, setData] = useState<AppData>({
     students: [], activities: [], evaluations: [], weeklyComments: [], aiReports: [], notes: []
   });
+  const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
@@ -35,12 +36,16 @@ const App: React.FC = () => {
   const { conflict } = usePresence();
 
   useEffect(() => {
-    loadData().then(setData);
+    loadData().then(d => {
+      setData(d);
+      setIsLoaded(true);
+    });
   }, []);
 
   useEffect(() => {
+    if (!isLoaded) return;
     saveData(data);
-  }, [data]);
+  }, [data, isLoaded]);
 
   const addStudent = (s: Omit<Student, 'id'>) => {
     const newStudent = { ...s, id: Math.random().toString(36).substr(2, 9) };
@@ -131,6 +136,17 @@ const App: React.FC = () => {
       notes: prev.notes.filter(n => n.id !== id)
     }));
   };
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="font-bold text-sm uppercase tracking-widest">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
