@@ -30,35 +30,32 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
       : `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`)
   );
 
-const handleMouseDown = useCallback((e: React.MouseEvent, week: number) => {
-  e.preventDefault();
-  const currentWidth = colWidthsRef.current[week] || 160;
-  resizingCol.current = { week, startX: e.clientX, startWidth: currentWidth };
+  const handleMouseDown = useCallback((e: React.MouseEvent, week: number) => {
+    e.preventDefault();
+    const currentWidth = colWidthsRef.current[week] || 160;
+    resizingCol.current = { week, startX: e.clientX, startWidth: currentWidth };
 
-  const handleMouseMove = (moveEvent: MouseEvent) => {
-    if (!resizingCol.current) return;
-    const diff = moveEvent.clientX - resizingCol.current.startX;
-    const newWidth = Math.max(80, resizingCol.current.startWidth + diff);
-    colWidthsRef.current = { ...colWidthsRef.current, [resizingCol.current.week]: newWidth };
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      if (!resizingCol.current) return;
+      const diff = moveEvent.clientX - resizingCol.current.startX;
+      const newWidth = Math.max(80, resizingCol.current.startWidth + diff);
+      colWidthsRef.current = { ...colWidthsRef.current, [resizingCol.current.week]: newWidth };
+      const th = thRefs.current[resizingCol.current.week];
+      if (th) th.style.width = `${newWidth}px`;
+    };
 
-    // Met à jour le DOM directement sans passer par React
-    const th = thRefs.current[resizingCol.current.week];
-    if (th) th.style.width = `${newWidth}px`;
-  };
+    const handleMouseUp = () => {
+      if (resizingCol.current) {
+        setColWidths({ ...colWidthsRef.current });
+      }
+      resizingCol.current = null;
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
 
-  const handleMouseUp = () => {
-    if (resizingCol.current) {
-      // Met à jour le state React seulement à la fin du drag
-      setColWidths({ ...colWidthsRef.current });
-    }
-    resizingCol.current = null;
-    window.removeEventListener('mousemove', handleMouseMove);
-    window.removeEventListener('mouseup', handleMouseUp);
-  };
-
-  window.addEventListener('mousemove', handleMouseMove);
-  window.addEventListener('mouseup', handleMouseUp);
-}, []);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -129,6 +126,7 @@ const handleMouseDown = useCallback((e: React.MouseEvent, week: number) => {
               {weeks.map(w => (
                 <th
                   key={w}
+                  ref={el => thRefs.current[w] = el}
                   className="p-4 border-r text-center relative"
                   style={{ width: colWidths[w] || 160 }}
                 >
