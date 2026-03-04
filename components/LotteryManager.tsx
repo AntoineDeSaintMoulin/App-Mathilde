@@ -120,9 +120,9 @@ const LotteryManager: React.FC<Props> = ({ students, activities, evaluations }) 
               value={selectedActivityId}
               onChange={e => { setSelectedActivityId(e.target.value); setResult(null); }}
             >
-              <option value="">Aucune activité — tous les élèves éligibles</option>
+              <option value="">Aucune activité liée</option>
               {activities.map(a => (
-                <option key={a.id} value={a.id}>{a.title} ({new Date(a.date).toLocaleDateString('fr-FR')})</option>
+                <option key={a.id} value={a.id}>{a.title}</option>
               ))}
             </select>
           </div>
