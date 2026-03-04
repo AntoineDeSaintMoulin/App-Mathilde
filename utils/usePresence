@@ -6,51 +6,58 @@ const SESSION_ID = Math.random().toString(36).substr(2, 9);
 
 export const usePresence = () => {
   const [conflict, setConflict] = useState(false);
+  const [sessionCount, setSessionCount] = useState(1);
 
   useEffect(() => {
-    // Enregistre la session actuelle
     const register = async () => {
       await supabase.from('presence').upsert({
-        user_id: USER_ID,
         session_id: SESSION_ID,
+        user_id: USER_ID,
         last_seen: new Date().toISOString()
       });
     };
 
-    // Vérifie si une autre session est active
     const check = async () => {
+      // Nettoie les sessions inactives depuis plus de 2 minutes
+      await supabase
+        .from('presence')
+        .delete()
+        .eq('user_id', USER_ID)
+        .lt('last_seen', new Date(Date.now() - 2 * 60 * 1000).toISOString());
+
+      // Récupère toutes les sessions actives
       const { data } = await supabase
         .from('presence')
         .select('session_id, last_seen')
-        .eq('user_id', USER_ID)
-        .single();
+        .eq('user_id', USER_ID);
 
-      if (data && data.session_id !== SESSION_ID) {
-        const lastSeen = new Date(data.last_seen).getTime();
-        const now = Date.now();
-        // Considère active si vue il y a moins de 2 minutes
-        if (now - lastSeen < 2 * 60 * 1000) {
-          setConflict(true);
-        } else {
-          setConflict(false);
-        }
-      } else {
-        setConflict(false);
+      if (data) {
+        const activeSessions = data.filter(s => s.session_id !== SESSION_ID);
+        setSessionCount(data.length);
+        setConflict(activeSessions.length > 0);
       }
     };
 
     register();
     check();
 
-    // Maintient la présence active toutes les 30 secondes
     const heartbeat = setInterval(() => {
       register();
       check();
     }, 30000);
 
-    // Nettoie à la fermeture
-    return () => clearInterval(heartbeat);
+    // Supprime la session à la fermeture
+    const cleanup = async () => {
+      await supabase.from('presence').delete().eq('session_id', SESSION_ID);
+    };
+
+    window.addEventListener('beforeunload', cleanup);
+
+    return () => {
+      clearInterval(heartbeat);
+      window.removeEventListener('beforeunload', cleanup);
+    };
   }, []);
 
-  return { conflict };
+  return { conflict, sessionCount };
 };
