@@ -38,42 +38,49 @@ export const loadData = async (): Promise<AppData> => {
   return result;
 };
 
+const syncTable = async (table: string, rows: { id: string; user_id: string; data: any }[]) => {
+  await supabase.from(table).delete().eq('user_id', USER_ID);
+  if (rows.length > 0) {
+    await supabase.from(table).insert(rows);
+  }
+};
+
 export const saveData = async (data: AppData): Promise<void> => {
-  const withId: { key: keyof AppData; table: string }[] = [
-    { key: 'students', table: 'students' },
-    { key: 'activities', table: 'activities' },
-    { key: 'notes', table: 'notes' },
-  ];
+  await syncTable('students', data.students.map(item => ({
+    id: item.id,
+    user_id: USER_ID,
+    data: item
+  })));
 
-  for (const { key, table } of withId) {
-    const items = (data as any)[key] as any[];
-    for (const item of items) {
-      await supabase
-        .from(table)
-        .upsert({ id: item.id, user_id: USER_ID, data: item });
-    }
-  }
+  await syncTable('activities', data.activities.map(item => ({
+    id: item.id,
+    user_id: USER_ID,
+    data: item
+  })));
 
-  for (const eval_ of data.evaluations) {
-    const id = `${eval_.studentId}_${eval_.activityId}`;
-    await supabase
-      .from('evaluations')
-      .upsert({ id, user_id: USER_ID, data: eval_ });
-  }
+  await syncTable('notes', data.notes.map(item => ({
+    id: item.id,
+    user_id: USER_ID,
+    data: item
+  })));
 
-  for (const comment of data.weeklyComments) {
-    const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
-    await supabase
-      .from('weekly_comments')
-      .upsert({ id, user_id: USER_ID, data: comment });
-  }
+  await syncTable('evaluations', data.evaluations.map(eval_ => ({
+    id: `${eval_.studentId}_${eval_.activityId}`,
+    user_id: USER_ID,
+    data: eval_
+  })));
 
-  for (const report of data.aiReports) {
-    const id = `${report.studentId}_${report.cycle}`;
-    await supabase
-      .from('ai_reports')
-      .upsert({ id, user_id: USER_ID, data: report });
-  }
+  await syncTable('weekly_comments', data.weeklyComments.map(comment => ({
+    id: `${comment.studentId}_${comment.cycle}_${comment.week}`,
+    user_id: USER_ID,
+    data: comment
+  })));
+
+  await syncTable('ai_reports', data.aiReports.map(report => ({
+    id: `${report.studentId}_${report.cycle}`,
+    user_id: USER_ID,
+    data: report
+  })));
 };
 
 export const exportToCSV = (data: any[], filename: string) => {
