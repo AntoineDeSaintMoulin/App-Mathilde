@@ -151,19 +151,6 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
 
-      {conflict && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-3 text-sm font-bold">
-          <span>⚠️</span>
-          <span>Une autre session est active ! Les données pourraient être écrasées.</span>
-          <button
-            onClick={() => window.location.reload()}
-            className="ml-2 bg-white text-orange-500 px-3 py-1 rounded-lg text-xs font-black hover:bg-orange-50 transition-colors"
-          >
-            Rafraîchir
-          </button>
-        </div>
-      )}
-
       <nav className="w-full md:w-64 bg-slate-900 text-slate-400 p-6 flex flex-col shrink-0">
         <div className="flex items-center gap-3 text-white mb-10 px-2">
           <div className="bg-blue-600 p-2 rounded-xl">
@@ -218,12 +205,24 @@ const App: React.FC = () => {
         </div>
 
         <div className="mt-auto pt-6 border-t border-slate-800 flex items-center gap-3 px-2 text-xs">
-          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white">
+          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white shrink-0">
             <Settings size={14} />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Mathilde Lits</p>
             <p className="text-slate-500 italic">Enseignante 1MA</p>
+          </div>
+          <div className="flex flex-col items-center gap-1 shrink-0">
+            <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 shadow-sm ${
+              conflict
+                ? 'bg-red-500 shadow-red-500/50'
+                : 'bg-emerald-500 shadow-emerald-500/50'
+            }`} />
+            <span className={`text-[8px] font-bold uppercase tracking-wider ${
+              conflict ? 'text-red-400' : 'text-emerald-500'
+            }`}>
+              {conflict ? 'Conflit' : 'Sync'}
+            </span>
           </div>
         </div>
       </nav>
