@@ -145,6 +145,7 @@ const handleSyncClick = async () => {
   if (conflict) {
     const freshData = await loadData();
     setData(freshData);
+    setSaveStatus('saved');
   }
 };
 
