@@ -1,0 +1,56 @@
+import { useEffect, useState } from 'react';
+import { supabase } from './supabaseClient';
+
+const USER_ID = 'mathilde';
+const SESSION_ID = Math.random().toString(36).substr(2, 9);
+
+export const usePresence = () => {
+  const [conflict, setConflict] = useState(false);
+
+  useEffect(() => {
+    // Enregistre la session actuelle
+    const register = async () => {
+      await supabase.from('presence').upsert({
+        user_id: USER_ID,
+        session_id: SESSION_ID,
+        last_seen: new Date().toISOString()
+      });
+    };
+
+    // Vérifie si une autre session est active
+    const check = async () => {
+      const { data } = await supabase
+        .from('presence')
+        .select('session_id, last_seen')
+        .eq('user_id', USER_ID)
+        .single();
+
+      if (data && data.session_id !== SESSION_ID) {
+        const lastSeen = new Date(data.last_seen).getTime();
+        const now = Date.now();
+        // Considère active si vue il y a moins de 2 minutes
+        if (now - lastSeen < 2 * 60 * 1000) {
+          setConflict(true);
+        } else {
+          setConflict(false);
+        }
+      } else {
+        setConflict(false);
+      }
+    };
+
+    register();
+    check();
+
+    // Maintient la présence active toutes les 30 secondes
+    const heartbeat = setInterval(() => {
+      register();
+      check();
+    }, 30000);
+
+    // Nettoie à la fermeture
+    return () => clearInterval(heartbeat);
+  }, []);
+
+  return { conflict };
+};
