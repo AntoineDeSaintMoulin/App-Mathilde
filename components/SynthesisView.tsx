@@ -27,7 +27,9 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
   };
 
   const getGlobalAverage = (studentId: string) => {
-    const allEvals = data.evaluations.filter(e => e.studentId === studentId && e.isPresent);
+    const allEvals = data.evaluations.filter(e => 
+      e.studentId === studentId && e.isPresent && e.grade > 0
+    );
     if (allEvals.length === 0) return null;
     const total = allEvals.reduce((acc, curr) => acc + curr.grade, 0);
     return parseFloat((total / allEvals.length).toFixed(1));
