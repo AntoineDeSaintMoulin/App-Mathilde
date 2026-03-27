@@ -7,18 +7,19 @@ const SESSION_ID = Math.random().toString(36).substr(2, 9);
 export const usePresence = () => {
   const [conflict, setConflict] = useState(false);
   const [sessionCount, setSessionCount] = useState(1);
+  const [otherNames, setOtherNames] = useState<string[]>([]);
 
   useEffect(() => {
     const register = async () => {
       await supabase.from('presence').upsert({
         session_id: SESSION_ID,
         user_id: USER_ID,
-        last_seen: new Date().toISOString()
+        last_seen: new Date().toISOString(),
+        name: USER_ID
       });
     };
 
     const check = async () => {
-      // Supprime les sessions inactives depuis plus de 45 secondes
       await supabase
         .from('presence')
         .delete()
@@ -27,16 +28,17 @@ export const usePresence = () => {
 
       const { data } = await supabase
         .from('presence')
-        .select('session_id')
+        .select('session_id, name')
         .eq('user_id', USER_ID);
 
       if (data) {
+        const otherSessions = data.filter(s => s.session_id !== SESSION_ID);
         setSessionCount(data.length);
-        setConflict(data.length > 1);
+        setConflict(otherSessions.length > 0);
+        setOtherNames(otherSessions.map(s => s.name || 'Inconnu'));
       }
     };
 
-    // Supprime explicitement la session au démarrage si elle existait déjà
     const init = async () => {
       await supabase.from('presence').delete().eq('session_id', SESSION_ID);
       await register();
@@ -45,13 +47,11 @@ export const usePresence = () => {
 
     init();
 
-    // Heartbeat toutes les 20 secondes
     const heartbeat = setInterval(() => {
       register();
       check();
     }, 20000);
 
-    // Realtime
     const channel = supabase
       .channel('presence-changes')
       .on('postgres_changes', {
@@ -64,7 +64,6 @@ export const usePresence = () => {
       })
       .subscribe();
 
-    // Nettoyage à la fermeture
     const cleanup = () => {
       supabase.from('presence').delete().eq('session_id', SESSION_ID);
     };
@@ -81,5 +80,5 @@ export const usePresence = () => {
     };
   }, []);
 
-  return { conflict, sessionCount };
+  return { conflict, sessionCount, otherNames };
 };
