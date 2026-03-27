@@ -1,5 +1,4 @@
-
-export type Subject = 'mathématiques' | 'français' | 'éveil' | 'sciences' | 'lecture' | 'écriture' | 'sport' | 'arts';
+export type Subject = 'mathématiques' | 'français';
 
 export interface Student {
   id: string;
@@ -18,7 +17,7 @@ export interface Activity {
   domain: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
   description: string;
-  objective?: string; // Optionnel
+  objective?: string;
   competencies: string;
   material?: string;
 }
@@ -27,7 +26,7 @@ export interface Evaluation {
   studentId: string;
   activityId: string;
   isPresent: boolean;
-  grade: number; // Note sur 10
+  grade: number;
   comment: string;
 }
 
