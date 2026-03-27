@@ -40,7 +40,7 @@ const App: React.FC = () => {
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const { conflict, sessionCount } = usePresence();
+  const { conflict, sessionCount, otherNames } = usePresence();
 
   useEffect(() => {
     loadData().then(d => {
@@ -207,7 +207,7 @@ const App: React.FC = () => {
     : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]';
 
   const syncLabel = conflict
-    ? `${sessionCount} sessions`
+    ? `⚠️ ${sessionCount}`
     : saveStatus === 'saving'
     ? 'Sync...'
     : saveStatus === 'error'
@@ -219,6 +219,12 @@ const App: React.FC = () => {
     : saveStatus === 'saving'
     ? 'text-yellow-400'
     : 'text-emerald-500';
+
+  const syncTitle = conflict
+    ? `${sessionCount} sessions actives — ${otherNames.join(', ')}`
+    : saveStatus === 'error'
+    ? 'Erreur de sauvegarde'
+    : 'Synchronisé';
 
   if (!isLoaded) {
     return (
@@ -246,7 +252,7 @@ const App: React.FC = () => {
           <button
             onClick={handleSyncClick}
             disabled={isSyncing}
-            title={conflict ? 'Cliquer pour rafraîchir' : saveStatus === 'error' ? 'Erreur de sauvegarde' : 'Synchronisé'}
+            title={syncTitle}
             className="flex flex-col items-center gap-1 shrink-0 cursor-pointer disabled:opacity-50"
           >
             <div className={`w-2.5 h-2.5 rounded-full transition-colors duration-500 ${syncColor}`} />
@@ -305,7 +311,6 @@ const App: React.FC = () => {
         </div>
 
         <div className="mt-auto pt-6 border-t border-slate-800 space-y-3">
-          {/* Boutons backup */}
           <div className="flex gap-2 px-2">
             <button
               onClick={handleExportJSON}
@@ -330,7 +335,6 @@ const App: React.FC = () => {
             />
           </div>
 
-          {/* Profil */}
           <div className="flex items-center gap-3 px-2 text-xs">
             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white shrink-0">
               <Settings size={14} />
