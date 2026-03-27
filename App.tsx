@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Users, 
   Layers, 
@@ -8,7 +8,9 @@ import {
   Settings,
   GraduationCap,
   FileText,
-  Shuffle
+  Shuffle,
+  Download,
+  Upload
 } from 'lucide-react';
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from './types';
 import { loadData, saveData } from './utils/storage';
@@ -22,10 +24,9 @@ import AssistantIA from './components/AssistantIA';
 import StudentProfileModal from './components/StudentProfileModal';
 import NotesManager from './components/NotesManager';
 import { usePresence } from './utils/usePresence';
-
 import LotteryManager from './components/LotteryManager';
 
-type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes' | 'lottery' ;
+type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes' | 'lottery';
 
 const App: React.FC = () => {
   const [data, setData] = useState<AppData>({
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const importRef = useRef<HTMLInputElement>(null);
 
   const { conflict, sessionCount } = usePresence();
 
@@ -145,15 +147,56 @@ const App: React.FC = () => {
     }));
   };
 
-const handleSyncClick = async () => {
-  if (conflict && !isSyncing) {
-    setIsSyncing(true);
-    const freshData = await loadData();
-    setData(freshData);
-    setSaveStatus('saved');
-    setIsSyncing(false);
-  }
-};
+  const handleSyncClick = async () => {
+    if (conflict && !isSyncing) {
+      setIsSyncing(true);
+      const freshData = await loadData();
+      setData(freshData);
+      setSaveStatus('saved');
+      setIsSyncing(false);
+    }
+  };
+
+  const handleExportJSON = () => {
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+      data
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `backup-1MA-${date}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        const importedData: AppData = parsed.data || parsed;
+        if (!importedData.students || !importedData.activities) {
+          alert('Fichier invalide — ce fichier ne semble pas être un backup 1MA.');
+          return;
+        }
+        if (confirm(`Restaurer la sauvegarde du ${new Date(parsed.exportedAt).toLocaleDateString('fr-FR')} ? Toutes les données actuelles seront remplacées.`)) {
+          setData(importedData);
+        }
+      } catch {
+        alert('Erreur — impossible de lire ce fichier JSON.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
 
   const syncColor = conflict
     ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]'
@@ -164,12 +207,12 @@ const handleSyncClick = async () => {
     : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]';
 
   const syncLabel = conflict
-  ? `${sessionCount} sessions`
-  : saveStatus === 'saving'
-  ? 'Sync...'
-  : saveStatus === 'error'
-  ? 'Erreur'
-  : 'Sync';
+    ? `${sessionCount} sessions`
+    : saveStatus === 'saving'
+    ? 'Sync...'
+    : saveStatus === 'error'
+    ? 'Erreur'
+    : 'Sync';
 
   const syncTextColor = conflict || saveStatus === 'error'
     ? 'text-red-400'
@@ -261,13 +304,41 @@ const handleSyncClick = async () => {
           </div>
         </div>
 
-        <div className="mt-auto pt-6 border-t border-slate-800 flex items-center gap-3 px-2 text-xs">
-          <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white shrink-0">
-            <Settings size={14} />
+        <div className="mt-auto pt-6 border-t border-slate-800 space-y-3">
+          {/* Boutons backup */}
+          <div className="flex gap-2 px-2">
+            <button
+              onClick={handleExportJSON}
+              title="Exporter une sauvegarde complète JSON"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-wider"
+            >
+              <Download size={12} /> Backup
+            </button>
+            <button
+              onClick={() => importRef.current?.click()}
+              title="Restaurer depuis un fichier JSON"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-wider"
+            >
+              <Upload size={12} /> Restaurer
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportJSON}
+              className="hidden"
+            />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Mathilde Lits</p>
-            <p className="text-slate-500 italic">Enseignante 1MA</p>
+
+          {/* Profil */}
+          <div className="flex items-center gap-3 px-2 text-xs">
+            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white shrink-0">
+              <Settings size={14} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Mathilde Lits</p>
+              <p className="text-slate-500 italic">Enseignante 1MA</p>
+            </div>
           </div>
         </div>
       </nav>
@@ -321,11 +392,12 @@ const handleSyncClick = async () => {
               existingReports={data.aiReports}
             />
           )}
+
           {activeTab === 'lottery' && (
-              <LotteryManager
-                students={data.students}
-                activities={data.activities}
-                evaluations={data.evaluations}
+            <LotteryManager
+              students={data.students}
+              activities={data.activities}
+              evaluations={data.evaluations}
             />
           )}
         </div>
