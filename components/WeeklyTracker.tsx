@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { CalendarDays, Save } from 'lucide-react';
+import { CalendarDays, Save, X } from 'lucide-react';
 import { Student, WeeklyComment } from '../types';
 
 interface Props {
@@ -57,6 +57,21 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
     window.addEventListener('mouseup', handleMouseUp);
   }, []);
 
+  const handleSave = () => {
+    if (!editingComment) return;
+    onSaveComment({
+      studentId: editingComment.sid,
+      cycle: selectedCycle,
+      week: editingComment.week,
+      content: editingComment.content
+    });
+    setEditingComment(null);
+  };
+
+  const editingStudent = editingComment
+    ? sortedStudents.find(s => s.id === editingComment.sid)
+    : null;
+
   return (
     <div className="space-y-6">
       <style>{`
@@ -91,6 +106,60 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
           opacity: 1;
         }
       `}</style>
+
+      {/* Modale plein écran */}
+      {editingComment && editingStudent && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-end md:items-center justify-center p-0 md:p-6">
+          <div className="bg-white w-full md:max-w-lg md:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col"
+            style={{ maxHeight: '90vh' }}
+          >
+            {/* Header modale */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">
+                  Semaine {editingComment.week} — Trimestre {selectedCycle}
+                </p>
+                <h3 className="font-black text-lg text-slate-800">
+                  {editingStudent.firstName} {editingStudent.lastName}
+                </h3>
+              </div>
+              <button
+                onClick={() => setEditingComment(null)}
+                className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Zone de texte */}
+            <div className="flex-1 p-6 overflow-y-auto">
+              <textarea
+                autoFocus
+                className="w-full h-64 p-4 text-sm text-slate-700 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-400 outline-none resize-none bg-slate-50 leading-relaxed"
+                placeholder="Écrivez votre commentaire ici..."
+                value={editingComment.content}
+                onChange={e => setEditingComment({ ...editingComment, content: e.target.value })}
+              />
+            </div>
+
+            {/* Footer modale */}
+            <div className="p-6 pt-0 flex gap-3">
+              <button
+                onClick={() => setEditingComment(null)}
+                className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleSave}
+                className="flex-1 py-3 bg-blue-600 text-white font-black rounded-2xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+              >
+                <Save size={16} /> Sauvegarder
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center justify-between bg-white p-4 rounded-2xl border shadow-sm">
         <div className="flex items-center gap-3">
@@ -152,47 +221,32 @@ const WeeklyTracker: React.FC<Props> = ({ students, comments, onSaveComment }) =
                     </span>
                   </div>
                 </td>
-                {weeks.map(week => (
-                  <td key={week} className="p-2 border-r align-top" style={{ width: colWidths[week] || 160 }}>
-                    <div className="group relative h-24">
-                      {editingComment?.sid === student.id && editingComment?.week === week ? (
-                        <div className="flex flex-col h-full gap-1">
-                          <textarea
-                            autoFocus
-                            className="flex-1 p-2 text-xs border rounded-lg focus:ring-2 focus:ring-blue-400 outline-none resize-none bg-white shadow-inner"
-                            value={editingComment.content}
-                            onChange={e => setEditingComment({...editingComment, content: e.target.value})}
-                          />
-                          <button
-                            onClick={() => {
-                              onSaveComment({ studentId: student.id, cycle: selectedCycle, week, content: editingComment.content });
-                              setEditingComment(null);
-                            }}
-                            className="bg-blue-600 text-white p-1 rounded-md flex items-center justify-center hover:bg-blue-700 transition-colors"
-                          >
-                            <Save size={14} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div
-                          onClick={() => setEditingComment({ sid: student.id, week, content: getComment(student.id, week) })}
-                          className={`tracker-scroll h-full p-2 text-[11px] leading-snug transition-all rounded-xl border border-transparent overflow-y-auto ${
-                            getComment(student.id, week)
-                              ? 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-200 italic'
-                              : 'text-transparent hover:bg-slate-50 hover:text-slate-300'
-                          }`}
-                        >
-                          {getComment(student.id, week) || 'Ajouter...'}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                ))}
+                {weeks.map(week => {
+                  const comment = getComment(student.id, week);
+                  return (
+                    <td key={week} className="p-2 border-r align-top" style={{ width: colWidths[week] || 160 }}>
+                      <div
+                        onClick={() => setEditingComment({ sid: student.id, week, content: comment })}
+                        className={`tracker-scroll h-24 p-2 text-[11px] leading-snug transition-all rounded-xl border border-transparent overflow-y-auto cursor-pointer ${
+                          comment
+                            ? 'bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-200 italic'
+                            : 'hover:bg-slate-50 hover:border-slate-100'
+                        }`}
+                      >
+                        {comment || (
+                          <span className="text-slate-200 not-italic">Ajouter...</span>
+                        )}
+                      </div>
+                    </td>
+                  );
+                })}
               </tr>
             ))}
             {students.length === 0 && (
               <tr>
-                <td colSpan={14} className="p-12 text-center text-slate-400 italic">Ajoutez d'abord des élèves dans l'onglet Élèves.</td>
+                <td colSpan={14} className="p-12 text-center text-slate-400 italic">
+                  Ajoutez d'abord des élèves dans l'onglet Élèves.
+                </td>
               </tr>
             )}
           </tbody>
