@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { BarChart3, FileDown, TrendingUp, Search, Sparkles, ArrowUpDown } from 'lucide-react';
+import { BarChart3, TrendingUp, Search, Sparkles, ArrowUpDown } from 'lucide-react';
 import { AppData, Subject } from '../types';
 import { SUBJECTS, getGradeConfig } from '../constants';
-import { exportToCSV } from '../utils/storage';
 
 interface Props {
   data: AppData;
@@ -35,32 +34,15 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
     return parseFloat((total / allEvals.length).toFixed(1));
   };
 
-  const handleExport = () => {
-    const exportData = data.students.map(student => {
-      const studentReport = data.aiReports.find(r => r.studentId === student.id && r.cycle === selectedCycle);
-      const row: any = {
-        'Élève': `${student.firstName} ${student.lastName}`,
-        'Moyenne Globale': getGlobalAverage(student.id) ?? '-',
-        'Commentaire Global IA': studentReport?.content || 'Non généré',
-      };
-      SUBJECTS.forEach(s => {
-        const avg = getStudentAverage(student.id, s.value);
-        row[s.label] = avg !== null ? `${avg}/10` : '-';
-      });
-      return row;
-    });
-    exportToCSV(exportData, `synthese-1MA-trimestre-${selectedCycle}`);
-  };
-
   const sortedAndFilteredStudents = data.students
     .filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()))
     .sort((a, b) => {
-        if (sortOption === 'alpha-asc') {
-          return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
-        }
-        if (sortOption === 'alpha-desc') {
-          return `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`);
-        }
+      if (sortOption === 'alpha-asc') {
+        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+      }
+      if (sortOption === 'alpha-desc') {
+        return `${b.firstName} ${b.lastName}`.localeCompare(`${a.firstName} ${a.lastName}`);
+      }
       const avgA = getGlobalAverage(a.id) ?? -1;
       const avgB = getGlobalAverage(b.id) ?? -1;
       if (sortOption === 'grade-asc') return avgA - avgB;
@@ -89,7 +71,6 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
             />
           </div>
 
-          {/* Tri */}
           <div className="flex items-center gap-2 bg-slate-50 border rounded-lg px-3 py-2">
             <ArrowUpDown size={14} className="text-slate-400" />
             <select
@@ -111,12 +92,6 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
           >
             {[1, 2, 3].map(c => <option key={c} value={c}>Trimestre {c}</option>)}
           </select>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-xs font-black uppercase tracking-widest rounded-lg hover:bg-slate-800 transition-all shadow-md"
-          >
-            <FileDown size={14} /> Exporter .CSV
-          </button>
         </div>
       </div>
 
@@ -157,8 +132,8 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
                     <td className="p-4 align-top border-r border-slate-50">
                       {studentReport ? (
                         <p className="text-[11px] text-slate-600 italic bg-slate-50 p-2 rounded-lg border border-slate-100 max-h-20 overflow-y-auto">
-                        "{studentReport.content}"
-                          </p>
+                          "{studentReport.content}"
+                        </p>
                       ) : (
                         <div className="flex items-center gap-2 text-slate-300 text-[10px] italic">
                           <Sparkles size={12} />
