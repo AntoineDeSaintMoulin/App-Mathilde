@@ -11,8 +11,8 @@ interface Props {
 }
 
 const MAIN_SUBJECTS: { value: Subject; label: string; color: string }[] = [
-  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-orange-500' },
-  { value: 'français', label: 'Français', color: 'bg-sky-400' },
+  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-[#B39EB5]' },
+  { value: 'français', label: 'Français', color: 'bg-[#B3EBF2]' },
 ];
 
 const StudentProfileModal: React.FC<Props> = ({ student, data, onClose, onUpdateReport }) => {
