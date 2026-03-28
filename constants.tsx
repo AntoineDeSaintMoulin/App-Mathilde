@@ -14,8 +14,8 @@ export const getGradeConfig = (grade: number) => {
 };
 
 export const DOMAINS: Record<Subject, string[]> = {
-  mathématiques: ['Dénombrer', 'Dictée', 'Comparer', 'Situer', 'Décomposer', 'Histoire', 'Calculs', 'Cartes-nombres'],
-  français: ['Mots-clics', 'Entendre', 'Voir', 'Lecture', 'Genre', 'Mots-images', 'Dictée', 'Segmentation', 'Calligraphie'],
+  mathématiques: ['Dénombrer', 'Dictée', 'Comparer', 'Situer', 'Décomposer', 'Histoire', 'Calculs', 'Cartes-nombres', 'Grandeurs'],
+  français: ['Mots-clics', 'Entendre', 'Voir', 'Lecture', 'Genre', 'Mots-images', 'Dictée', 'Segmentation', 'Calligraphie', 'Savoir parler', 'Cartes-Mots'],
   lecture: [],
   écriture: [],
   sciences: [],
