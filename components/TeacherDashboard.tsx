@@ -66,15 +66,14 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
   return (
     <div className="space-y-6">
 
-      {/* Header */}
+{/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border shadow-sm">
         <div>
           <h2 className="text-xl font-black flex items-center gap-2 text-slate-800">
             <BarChart3 className="text-blue-600" /> Suivi Prof
           </h2>
-<p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-  Progression par domaine de compétence
-</p>
+          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+            Progression par domaine de compétence
           </p>
         </div>
       </div>
