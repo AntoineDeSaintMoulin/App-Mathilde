@@ -3,8 +3,8 @@ import { Calculator, BookOpen } from 'lucide-react';
 import { Subject } from './types';
 
 export const SUBJECTS: { value: Subject; label: string; color: string; icon: React.ReactNode }[] = [
-  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-blue-500', icon: <Calculator size={18} /> },
-  { value: 'français', label: 'Français', color: 'bg-red-500', icon: <BookOpen size={18} /> },
+  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-orange-500', icon: <Calculator size={18} /> },
+  { value: 'français', label: 'Français', color: 'bg-sky-400', icon: <BookOpen size={18} /> },
 ];
 
 export const getGradeConfig = (grade: number) => {
