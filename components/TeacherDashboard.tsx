@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BarChart3, BookOpen, Calculator } from 'lucide-react';
+import { BarChart3, BookOpen, Calculator, ArrowUpDown } from 'lucide-react';
 import { AppData, Subject } from '../types';
 import { DOMAINS, getGradeConfig } from '../constants';
 
@@ -16,14 +16,12 @@ const MAX_ACTIVITIES = 10;
 
 const TeacherDashboard: React.FC<Props> = ({ data }) => {
   const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
+  const [sortDomains, setSortDomains] = useState<'default' | 'asc' | 'desc'>('default');
 
   const getActivitiesForDomain = (subject: Subject, domain: string) => {
     return data.activities.filter(a => {
       if (a.subject !== subject || a.domain !== domain) return false;
       if (selectedCycle === 'all') return true;
-      // Filtre par trimestre — on utilise les évaluations pour déterminer le cycle
-      // On considère que toutes les activités sont dans le même cycle pour simplifier
-      // En pratique on filtre par date approximative (trimestre 1 = mois 9-12, 2 = 1-3, 3 = 4-6)
       const month = new Date(a.date).getMonth() + 1;
       if (selectedCycle === 1) return month >= 9 || month <= 12;
       if (selectedCycle === 2) return month >= 1 && month <= 3;
@@ -85,7 +83,6 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
           </p>
         </div>
 
-        {/* Sélecteur trimestre */}
         <div className="flex gap-2">
           <button
             onClick={() => setSelectedCycle('all')}
@@ -119,6 +116,13 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
           const totalMax = domains.length * MAX_ACTIVITIES;
           const globalRatio = totalActivities / totalMax;
 
+          const sortedDomains = [...domains].sort((a, b) => {
+            if (sortDomains === 'default') return 0;
+            const countA = getActivitiesForDomain(subject.value, a).length;
+            const countB = getActivitiesForDomain(subject.value, b).length;
+            return sortDomains === 'desc' ? countB - countA : countA - countB;
+          });
+
           return (
             <div key={subject.value} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
 
@@ -129,8 +133,23 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
                     {subject.icon}
                     <h3 className="font-black text-lg">{subject.label}</h3>
                   </div>
-                  <div className="bg-white/20 px-3 py-1 rounded-xl">
-                    <span className="text-white font-black text-sm">{totalActivities}/{totalMax}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-white/20 px-3 py-1 rounded-xl">
+                      <span className="text-white font-black text-sm">{totalActivities}/{totalMax}</span>
+                    </div>
+                    <button
+                      onClick={() => setSortDomains(prev =>
+                        prev === 'default' ? 'desc' : prev === 'desc' ? 'asc' : 'default'
+                      )}
+                      className="bg-white/20 hover:bg-white/30 p-1.5 rounded-xl transition-all"
+                      title={
+                        sortDomains === 'default' ? 'Trier par couverture'
+                        : sortDomains === 'desc' ? 'Tri décroissant actif'
+                        : 'Tri croissant actif'
+                      }
+                    >
+                      <ArrowUpDown size={14} className="text-white" />
+                    </button>
                   </div>
                 </div>
 
@@ -148,7 +167,7 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
 
               {/* Domaines */}
               <div className="divide-y">
-                {domains.map(domain => {
+                {sortedDomains.map(domain => {
                   const activities = getActivitiesForDomain(subject.value, domain);
                   const count = activities.length;
                   const ratio = count / MAX_ACTIVITIES;
