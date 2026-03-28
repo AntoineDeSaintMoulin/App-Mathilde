@@ -8,8 +8,8 @@ interface Props {
 }
 
 const MAIN_SUBJECTS: { value: Subject; label: string; color: string; bgLight: string; icon: React.ReactNode }[] = [
-  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-blue-500', bgLight: 'bg-blue-50', icon: <Calculator size={18} /> },
-  { value: 'français', label: 'Français', color: 'bg-red-500', bgLight: 'bg-red-50', icon: <BookOpen size={18} /> },
+  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-orange-500', bgLight: 'bg-orange-50', icon: <Calculator size={18} /> },
+  { value: 'français', label: 'Français', color: 'bg-sky-400', bgLight: 'bg-sky-50', icon: <BookOpen size={18} /> },
 ];
 
 const MAX_ACTIVITIES = 10;
