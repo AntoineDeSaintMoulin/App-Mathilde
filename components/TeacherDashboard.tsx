@@ -15,22 +15,13 @@ const MAIN_SUBJECTS: { value: Subject; label: string; color: string; bgLight: st
 const MAX_ACTIVITIES = 10;
 
 const TeacherDashboard: React.FC<Props> = ({ data }) => {
-  const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
   const [sortDomains, setSortDomains] = useState<Record<Subject, 'default' | 'asc' | 'desc'>>({
     mathématiques: 'default',
     français: 'default',
   });
 
   const getActivitiesForDomain = (subject: Subject, domain: string) => {
-    return data.activities.filter(a => {
-      if (a.subject !== subject || a.domain !== domain) return false;
-      if (selectedCycle === 'all') return true;
-      const month = new Date(a.date).getMonth() + 1;
-      if (selectedCycle === 1) return month >= 9 || month <= 12;
-      if (selectedCycle === 2) return month >= 1 && month <= 3;
-      if (selectedCycle === 3) return month >= 4 && month <= 6;
-      return true;
-    });
+    return data.activities.filter(a => a.subject === subject && a.domain === domain);
   };
 
   const getClassAverageForDomain = (subject: Subject, domain: string) => {
@@ -84,28 +75,6 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
           <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
             Progression par domaine de compétence — {MAX_ACTIVITIES} activités max par domaine
           </p>
-        </div>
-
-        <div className="flex gap-2">
-          <button
-            onClick={() => setSelectedCycle('all')}
-            className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
-              selectedCycle === 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            Toute l'année
-          </button>
-          {[1, 2, 3].map(c => (
-            <button
-              key={c}
-              onClick={() => setSelectedCycle(c)}
-              className={`px-4 py-2 rounded-xl font-bold text-sm transition-all ${
-                selectedCycle === c ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              T{c}
-            </button>
-          ))}
         </div>
       </div>
 
