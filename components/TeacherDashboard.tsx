@@ -16,7 +16,10 @@ const MAX_ACTIVITIES = 10;
 
 const TeacherDashboard: React.FC<Props> = ({ data }) => {
   const [selectedCycle, setSelectedCycle] = useState<number | 'all'>('all');
-  const [sortDomains, setSortDomains] = useState<'default' | 'asc' | 'desc'>('default');
+  const [sortDomains, setSortDomains] = useState<Record<Subject, 'default' | 'asc' | 'desc'>>({
+    mathématiques: 'default',
+    français: 'default',
+  });
 
   const getActivitiesForDomain = (subject: Subject, domain: string) => {
     return data.activities.filter(a => {
@@ -115,12 +118,13 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
           );
           const totalMax = domains.length * MAX_ACTIVITIES;
           const globalRatio = totalActivities / totalMax;
+          const currentSort = sortDomains[subject.value];
 
           const sortedDomains = [...domains].sort((a, b) => {
-            if (sortDomains === 'default') return 0;
+            if (currentSort === 'default') return 0;
             const countA = getActivitiesForDomain(subject.value, a).length;
             const countB = getActivitiesForDomain(subject.value, b).length;
-            return sortDomains === 'desc' ? countB - countA : countA - countB;
+            return currentSort === 'desc' ? countB - countA : countA - countB;
           });
 
           return (
@@ -138,13 +142,14 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
                       <span className="text-white font-black text-sm">{totalActivities}/{totalMax}</span>
                     </div>
                     <button
-                      onClick={() => setSortDomains(prev =>
-                        prev === 'default' ? 'desc' : prev === 'desc' ? 'asc' : 'default'
-                      )}
+                      onClick={() => setSortDomains(prev => ({
+                        ...prev,
+                        [subject.value]: prev[subject.value] === 'default' ? 'desc' : prev[subject.value] === 'desc' ? 'asc' : 'default'
+                      }))}
                       className="bg-white/20 hover:bg-white/30 p-1.5 rounded-xl transition-all"
                       title={
-                        sortDomains === 'default' ? 'Trier par couverture'
-                        : sortDomains === 'desc' ? 'Tri décroissant actif'
+                        currentSort === 'default' ? 'Trier par couverture'
+                        : currentSort === 'desc' ? 'Tri décroissant actif'
                         : 'Tri croissant actif'
                       }
                     >
