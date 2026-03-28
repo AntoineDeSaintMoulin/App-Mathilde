@@ -23,10 +23,11 @@ import SynthesisView from './components/SynthesisView';
 import AssistantIA from './components/AssistantIA';
 import StudentProfileModal from './components/StudentProfileModal';
 import NotesManager from './components/NotesManager';
-import { usePresence } from './utils/usePresence';
 import LotteryManager from './components/LotteryManager';
+import TeacherDashboard from './components/TeacherDashboard';
+import { usePresence } from './utils/usePresence';
 
-type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'ia' | 'notes' | 'lottery';
+type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'teacher' | 'ia' | 'notes' | 'lottery';
 
 const App: React.FC = () => {
   const [data, setData] = useState<AppData>({
@@ -263,30 +264,40 @@ const App: React.FC = () => {
         </div>
 
         <div className="space-y-1 flex-1">
-          <NavItem 
-            active={activeTab === 'dashboard'} 
-            onClick={() => setActiveTab('dashboard')} 
-            icon={<LayoutDashboard size={20} />} 
-            label="Synthèse" 
+          <NavItem
+            active={activeTab === 'dashboard'}
+            onClick={() => setActiveTab('dashboard')}
+            icon={<LayoutDashboard size={20} />}
+            label="Synthèse"
           />
-          <NavItem 
-            active={activeTab === 'activites'} 
-            onClick={() => setActiveTab('activites')} 
-            icon={<Layers size={20} />} 
-            label="Activités" 
+          <NavItem
+            active={activeTab === 'eleves'}
+            onClick={() => setActiveTab('eleves')}
+            icon={<Users size={20} />}
+            label="Élèves"
           />
-          <NavItem 
-            active={activeTab === 'eleves'} 
-            onClick={() => setActiveTab('eleves')} 
-            icon={<Users size={20} />} 
-            label="Élèves" 
+          <NavItem
+            active={activeTab === 'activites'}
+            onClick={() => setActiveTab('activites')}
+            icon={<Layers size={20} />}
+            label="Activités"
           />
-          <NavItem 
-            active={activeTab === 'hebdo'} 
-            onClick={() => setActiveTab('hebdo')} 
-            icon={<CalendarDays size={20} />} 
-            label="Suivi Hebdo" 
+          <NavItem
+            active={activeTab === 'hebdo'}
+            onClick={() => setActiveTab('hebdo')}
+            icon={<CalendarDays size={20} />}
+            label="Suivi Hebdo"
           />
+
+          <div className="pt-4 mt-4 border-t border-slate-800">
+            <NavItem
+              active={activeTab === 'teacher'}
+              onClick={() => setActiveTab('teacher')}
+              icon={<GraduationCap size={20} />}
+              label="Suivi Prof"
+            />
+          </div>
+
           <NavItem
             active={activeTab === 'lottery'}
             onClick={() => setActiveTab('lottery')}
@@ -299,12 +310,13 @@ const App: React.FC = () => {
             icon={<FileText size={20} />}
             label="Notes"
           />
+
           <div className="pt-4 mt-4 border-t border-slate-800">
-            <NavItem 
-              active={activeTab === 'ia'} 
-              onClick={() => setActiveTab('ia')} 
-              icon={<Sparkles size={20} className="text-purple-400" />} 
-              label="Assistant IA" 
+            <NavItem
+              active={activeTab === 'ia'}
+              onClick={() => setActiveTab('ia')}
+              icon={<Sparkles size={20} className="text-purple-400" />}
+              label="Assistant IA"
               color="text-purple-400"
             />
           </div>
@@ -350,11 +362,11 @@ const App: React.FC = () => {
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {activeTab === 'dashboard' && <SynthesisView data={data} />}
-          
+
           {activeTab === 'activites' && (
-            <ActivityManager 
-              activities={data.activities} 
-              onAdd={addActivity} 
+            <ActivityManager
+              activities={data.activities}
+              onAdd={addActivity}
               onUpdate={updateActivity}
               onDelete={deleteActivity}
               onSelect={setSelectedActivity}
@@ -362,9 +374,9 @@ const App: React.FC = () => {
           )}
 
           {activeTab === 'eleves' && (
-            <StudentList 
-              students={data.students} 
-              onAdd={addStudent} 
+            <StudentList
+              students={data.students}
+              onAdd={addStudent}
               onUpdate={updateStudent}
               onDelete={deleteStudent}
               onViewStudent={setViewingStudent}
@@ -372,11 +384,15 @@ const App: React.FC = () => {
           )}
 
           {activeTab === 'hebdo' && (
-            <WeeklyTracker 
-              students={data.students} 
-              comments={data.weeklyComments} 
+            <WeeklyTracker
+              students={data.students}
+              comments={data.weeklyComments}
               onSaveComment={saveWeeklyComment}
             />
+          )}
+
+          {activeTab === 'teacher' && (
+            <TeacherDashboard data={data} />
           )}
 
           {activeTab === 'notes' && (
@@ -389,7 +405,7 @@ const App: React.FC = () => {
           )}
 
           {activeTab === 'ia' && (
-            <AssistantIA 
+            <AssistantIA
               students={data.students}
               data={data}
               onSaveReport={saveAIReport}
@@ -408,7 +424,7 @@ const App: React.FC = () => {
       </main>
 
       {selectedActivity && (
-        <EvaluationModal 
+        <EvaluationModal
           activity={selectedActivity}
           students={data.students}
           evaluations={data.evaluations.filter(e => e.activityId === selectedActivity.id)}
@@ -438,11 +454,11 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ active, onClick, icon, label, color }) => (
-  <button 
+  <button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-      active 
-        ? 'bg-slate-800 text-white shadow-inner' 
+      active
+        ? 'bg-slate-800 text-white shadow-inner'
         : 'hover:bg-slate-800/50 hover:text-slate-200'
     }`}
   >
