@@ -12,7 +12,7 @@ const MAIN_SUBJECTS: { value: Subject; label: string; color: string; bgLight: st
   { value: 'français', label: 'Français', color: 'bg-[#B3EBF2]', bgLight: 'bg-[#E8F9FB]', icon: <BookOpen size={18} /> },
 ];
 
-const MAX_ACTIVITIES = 10;
+const MAX_ACTIVITIES = 30;
 
 const TeacherDashboard: React.FC<Props> = ({ data }) => {
   const [sortDomains, setSortDomains] = useState<Record<Subject, 'default' | 'asc' | 'desc'>>({
@@ -72,8 +72,9 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
           <h2 className="text-xl font-black flex items-center gap-2 text-slate-800">
             <BarChart3 className="text-blue-600" /> Suivi Prof
           </h2>
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-            Progression par domaine de compétence — {MAX_ACTIVITIES} activités max par domaine
+<p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+  Progression par domaine de compétence
+</p>
           </p>
         </div>
       </div>
