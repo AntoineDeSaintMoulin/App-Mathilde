@@ -7,9 +7,14 @@ interface Props {
   data: AppData;
 }
 
-const MAIN_SUBJECTS: { value: Subject; label: string; color: string; bgLight: string; icon: React.ReactNode }[] = [
-  { value: 'mathématiques', label: 'Mathématiques', color: 'bg-[#B39EB5]', bgLight: 'bg-[#EDE8EE]', icon: <Calculator size={18} /> },
-  { value: 'français', label: 'Français', color: 'bg-[#B3EBF2]', bgLight: 'bg-[#E8F9FB]', icon: <BookOpen size={18} /> },
+const SUBJECT_COLORS: Record<Subject, { bg: string; bgLight: string; text: string }> = {
+  mathématiques: { bg: '#B39EB5', bgLight: '#EDE8EE', text: '#6B5A6E' },
+  français: { bg: '#B3EBF2', bgLight: '#E8F9FB', text: '#3A8A93' },
+};
+
+const MAIN_SUBJECTS: { value: Subject; label: string; icon: React.ReactNode }[] = [
+  { value: 'mathématiques', label: 'Mathématiques', icon: <Calculator size={18} /> },
+  { value: 'français', label: 'Français', icon: <BookOpen size={18} /> },
 ];
 
 const MAX_ACTIVITIES = 10;
@@ -36,11 +41,9 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
   const getClassAverageForDomain = (subject: Subject, domain: string) => {
     const activities = getActivitiesForDomain(subject, domain);
     if (activities.length === 0) return null;
-
     const allEvals = activities.flatMap(a =>
       data.evaluations.filter(e => e.activityId === a.id && e.isPresent && e.grade > 0)
     );
-
     if (allEvals.length === 0) return null;
     return parseFloat((allEvals.reduce((acc, e) => acc + e.grade, 0) / allEvals.length).toFixed(1));
   };
@@ -112,6 +115,7 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
       {/* Grille matières */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {MAIN_SUBJECTS.map(subject => {
+          const colors = SUBJECT_COLORS[subject.value];
           const domains = DOMAINS[subject.value] || [];
           const totalActivities = domains.reduce((acc, domain) =>
             acc + getActivitiesForDomain(subject.value, domain).length, 0
@@ -131,41 +135,46 @@ const TeacherDashboard: React.FC<Props> = ({ data }) => {
             <div key={subject.value} className="bg-white rounded-2xl border shadow-sm overflow-hidden">
 
               {/* En-tête matière */}
-              <div className={`${subject.color} p-5`}>
+              <div style={{ backgroundColor: colors.bg }} className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-white">
+                  <div className="flex items-center gap-2" style={{ color: colors.text }}>
                     {subject.icon}
                     <h3 className="font-black text-lg">{subject.label}</h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="bg-white/20 px-3 py-1 rounded-xl">
-                      <span className="text-white font-black text-sm">{totalActivities}/{totalMax}</span>
+                    <div className="bg-white/40 px-3 py-1 rounded-xl">
+                      <span className="font-black text-sm" style={{ color: colors.text }}>
+                        {totalActivities}/{totalMax}
+                      </span>
                     </div>
                     <button
                       onClick={() => setSortDomains(prev => ({
                         ...prev,
                         [subject.value]: prev[subject.value] === 'default' ? 'desc' : prev[subject.value] === 'desc' ? 'asc' : 'default'
                       }))}
-                      className="bg-white/20 hover:bg-white/30 p-1.5 rounded-xl transition-all"
+                      className="bg-white/40 hover:bg-white/60 p-1.5 rounded-xl transition-all"
                       title={
                         currentSort === 'default' ? 'Trier par couverture'
                         : currentSort === 'desc' ? 'Tri décroissant actif'
                         : 'Tri croissant actif'
                       }
                     >
-                      <ArrowUpDown size={14} className="text-white" />
+                      <ArrowUpDown size={14} style={{ color: colors.text }} />
                     </button>
                   </div>
                 </div>
 
                 {/* Barre de progression globale */}
-                <div className="bg-white/20 rounded-full h-2">
+                <div className="bg-white/30 rounded-full h-2">
                   <div
-                    className="bg-white rounded-full h-2 transition-all duration-500"
-                    style={{ width: `${Math.min(globalRatio * 100, 100)}%` }}
+                    className="rounded-full h-2 transition-all duration-500"
+                    style={{
+                      width: `${Math.min(globalRatio * 100, 100)}%`,
+                      backgroundColor: colors.text
+                    }}
                   />
                 </div>
-                <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider mt-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider mt-1" style={{ color: colors.text }}>
                   {Math.round(globalRatio * 100)}% de la couverture annuelle
                 </p>
               </div>
