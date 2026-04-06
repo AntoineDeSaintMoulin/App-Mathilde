@@ -105,25 +105,25 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             onChange={e => setSearchText(e.target.value)}
           />
         </div>
-          <div className="flex gap-2 flex-wrap">
-            {SUBJECTS.map(s => (
-              <button
-                key={s.value}
-                onClick={() => setSearchSubjects(prev =>
-                  prev.includes(s.value)
-                    ? prev.filter(x => x !== s.value)
-                    : [...prev, s.value]
-                )}
-                className={`px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
-                  searchSubjects.includes(s.value)
-                    ? `${s.color} text-white shadow-md`
-                    : 'bg-white border text-slate-500 hover:bg-slate-50'
-                }`}
-              >
-                {s.icon} {s.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex gap-2 flex-wrap">
+          {SUBJECTS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => setSearchSubjects(prev =>
+                prev.includes(s.value)
+                  ? prev.filter(x => x !== s.value)
+                  : [...prev, s.value]
+              )}
+              className={`px-3 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
+                searchSubjects.includes(s.value)
+                  ? `${s.color} text-white shadow-md`
+                  : 'bg-white border text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              {s.icon} {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Compteur de résultats */}
@@ -170,16 +170,17 @@ const ActivityManager: React.FC<Props> = ({ activities, onAdd, onUpdate, onDelet
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Domaine de compétence</label>
-              <input
-                list="domain-suggestions"
-                placeholder="Ex: Calcul mental ou nouveau domaine..."
+              <select
+                required
                 className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
                 value={formData.domain}
                 onChange={e => setFormData({...formData, domain: e.target.value})}
-              />
-              <datalist id="domain-suggestions">
-                {DOMAINS[formData.subject].map(d => <option key={d} value={d} />)}
-              </datalist>
+              >
+                <option value="">Choisir un domaine...</option>
+                {DOMAINS[formData.subject].map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Niveau de difficulté (1-5)</label>
