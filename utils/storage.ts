@@ -14,6 +14,7 @@ const DEFAULT_DATA: AppData = {
 
 export const loadData = async (): Promise<AppData> => {
   const result: AppData = { ...DEFAULT_DATA };
+  let hasError = false;
 
   const tables: { key: keyof AppData; table: string }[] = [
     { key: 'students', table: 'students' },
@@ -29,11 +30,17 @@ export const loadData = async (): Promise<AppData> => {
       .from(table)
       .select('data')
       .eq('user_id', USER_ID);
-    if (!error && data) {
+
+    if (error) {
+      hasError = true;
+      console.error(`Erreur chargement ${table}:`, error);
+    } else if (data) {
       (result as any)[key] = data.map((row: any) => row.data);
     }
   }
 
+  // Si erreur Supabase, on marque les données comme non fiables
+  (result as any)._loadError = hasError;
   return result;
 };
 
