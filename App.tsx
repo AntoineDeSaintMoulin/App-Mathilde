@@ -41,27 +41,31 @@ const App: React.FC = () => {
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
 
-  const { conflict, sessionCount, otherNames } = usePresence();
+const { conflict, sessionCount, otherNames } = usePresence();
 
-  useEffect(() => {
-    loadData().then(d => {
-      setData(d);
-      setIsLoaded(true);
-    });
-  }, []);
+useEffect(() => {
+  loadData().then(d => {
+    setData(d);
+    setIsLoaded(true);
+  });
+}, []);
 
-  useEffect(() => {
-    if (!isLoaded) return;
-    setSaveStatus('saving');
-    saveData(data)
-      .then(() => setSaveStatus('saved'))
-      .catch(() => setSaveStatus('error'));
-  }, [data, isLoaded]);
+useEffect(() => {
+  if (!isLoaded) return;
+  if ((data as any)._loadError) {
+    setSaveStatus('error');
+    return; // Bloque toute sauvegarde si le chargement a échoué
+  }
+  setSaveStatus('saving');
+  saveData(data)
+    .then(() => setSaveStatus('saved'))
+    .catch(() => setSaveStatus('error'));
+}, [data, isLoaded]);
 
-  const addStudent = (s: Omit<Student, 'id'>) => {
-    const newStudent = { ...s, id: Math.random().toString(36).substr(2, 9) };
-    setData(prev => ({ ...prev, students: [...prev.students, newStudent] }));
-  };
+const addStudent = (s: Omit<Student, 'id'>) => {
+  const newStudent = { ...s, id: Math.random().toString(36).substr(2, 9) };
+  setData(prev => ({ ...prev, students: [...prev.students, newStudent] }));
+};
 
   const updateStudent = (updated: Student) => {
     setData(prev => ({
