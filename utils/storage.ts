@@ -63,6 +63,12 @@ const syncTable = async (table: string, rows: { id: string; user_id: string; dat
 };
 
 export const saveData = async (data: AppData): Promise<void> => {
+  // Sécurité absolue : on ne sauvegarde jamais si tout est vide simultanément
+  if (data.activities.length === 0 && data.evaluations.length === 0 && data.students.length === 0) {
+    console.warn('Sauvegarde bloquée — données suspectes (tout est vide)');
+    throw new Error('Données suspectes — sauvegarde bloquée');
+  }
+
   await syncTable('students', data.students.map(item => ({
     id: item.id,
     user_id: USER_ID,
