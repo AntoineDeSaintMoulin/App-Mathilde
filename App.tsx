@@ -15,6 +15,7 @@ import {
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from './types';
 import { loadData, saveData } from './utils/storage';
 
+import emailjs from '@emailjs/browser';
 import StudentList from './components/StudentList';
 import ActivityManager from './components/ActivityManager';
 import EvaluationModal from './components/EvaluationModal';
@@ -73,22 +74,28 @@ useEffect(() => {
   const now = Date.now();
 
   if (!lastBackup || now - parseInt(lastBackup) > 24 * 60 * 60 * 1000) {
+    const date = new Date().toISOString().split('T')[0];
     const backup = {
       exportedAt: new Date().toISOString(),
       version: '1.0',
       data
     };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    const date = new Date().toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `backup-1MA-auto-${date}.json`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    localStorage.setItem(LAST_BACKUP_KEY, now.toString());
+    const backupContent = JSON.stringify(backup, null, 2);
+
+    emailjs.send(
+      'service_3lfz2cb',
+      'template_k8tfy0s',
+      {
+        date: date,
+        backup_content: backupContent,
+      },
+      'l8lFbo_OrfczPN2Vs'
+    ).then(() => {
+      localStorage.setItem(LAST_BACKUP_KEY, now.toString());
+      console.log('Backup envoyé par email');
+    }).catch((error) => {
+      console.error('Erreur envoi backup email:', error);
+    });
   }
 }, [isLoaded]);
 
