@@ -39,21 +39,23 @@ export const loadData = async (): Promise<AppData> => {
     }
   }
 
-  // Si erreur Supabase, on marque les données comme non fiables
   (result as any)._loadError = hasError;
   return result;
 };
 
 const syncTable = async (table: string, rows: { id: string; user_id: string; data: any }[]) => {
-  // Sécurité : si le tableau entrant est vide, on vérifie d'abord
-  // qu'il n'y a pas de données existantes en base avant de supprimer
-  if (rows.length === 0) {
-    const { data } = await supabase
-      .from(table)
-      .select('id')
-      .eq('user_id', USER_ID)
-      .limit(1);
-    if (data && data.length > 0) return; // Des données existent → on ne touche pas
+  // Protection individuelle par table :
+  // Si on veut sauvegarder une table vide, on vérifie d'abord
+  // si elle contient des données en base — si oui, on ne touche pas
+  const { data: existing } = await supabase
+    .from(table)
+    .select('id')
+    .eq('user_id', USER_ID)
+    .limit(1);
+
+  if (existing && existing.length > 0 && rows.length === 0) {
+    console.warn(`Sauvegarde bloquée pour ${table} — tentative d'écrasement avec données vides`);
+    return;
   }
 
   await supabase.from(table).delete().eq('user_id', USER_ID);
@@ -63,7 +65,12 @@ const syncTable = async (table: string, rows: { id: string; user_id: string; dat
 };
 
 export const saveData = async (data: AppData): Promise<void> => {
-  // Sécurité absolue : on ne sauvegarde jamais si tout est vide simultanément
+  // Blocage si erreur de chargement détectée
+  if ((data as any)._loadError) {
+    throw new Error('Données non fiables — sauvegarde bloquée');
+  }
+
+  // Blocage si tout est vide simultanément
   if (data.activities.length === 0 && data.evaluations.length === 0 && data.students.length === 0) {
     console.warn('Sauvegarde bloquée — données suspectes (tout est vide)');
     throw new Error('Données suspectes — sauvegarde bloquée');
