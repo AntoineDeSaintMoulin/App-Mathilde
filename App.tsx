@@ -15,7 +15,6 @@ import {
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from './types';
 import { loadData, saveData } from './utils/storage';
 
-import emailjs from '@emailjs/browser';
 import StudentList from './components/StudentList';
 import ActivityManager from './components/ActivityManager';
 import EvaluationModal from './components/EvaluationModal';
@@ -82,20 +81,16 @@ useEffect(() => {
     };
     const backupContent = JSON.stringify(backup, null, 2);
 
-    emailjs.send(
-      'service_3lfz2cb',
-      'template_k8tfy0s',
-      {
-        date: date,
-        backup_content: backupContent,
-      },
-      'l8lFbo_OrfczPN2Vs'
-    ).then(() => {
-      localStorage.setItem(LAST_BACKUP_KEY, now.toString());
-      console.log('Backup envoyé par email');
-    }).catch((error) => {
-      console.error('Erreur envoi backup email:', error);
-    });
+const blob = new Blob([backupContent], { type: 'application/json' });
+const url = URL.createObjectURL(blob);
+const link = document.createElement('a');
+link.setAttribute('href', url);
+link.setAttribute('download', `backup-1MA-auto-${date}.json`);
+link.style.visibility = 'hidden';
+document.body.appendChild(link);
+link.click();
+document.body.removeChild(link);
+localStorage.setItem(LAST_BACKUP_KEY, now.toString());
   }
 }, [isLoaded]);
 
