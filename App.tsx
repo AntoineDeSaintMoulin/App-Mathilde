@@ -26,6 +26,7 @@ import NotesManager from './components/NotesManager';
 import LotteryManager from './components/LotteryManager';
 import TeacherDashboard from './components/TeacherDashboard';
 import { usePresence } from './utils/usePresence';
+import { keepAlive } from './utils/keepAlive';
 
 type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'teacher' | 'ia' | 'notes' | 'lottery';
 
@@ -44,6 +45,7 @@ const App: React.FC = () => {
 const { conflict, sessionCount, otherNames } = usePresence();
 
 useEffect(() => {
+  keepAlive();
   loadData().then(d => {
     setData(d);
     setIsLoaded(true);
@@ -54,13 +56,41 @@ useEffect(() => {
   if (!isLoaded) return;
   if ((data as any)._loadError) {
     setSaveStatus('error');
-    return; // Bloque toute sauvegarde si le chargement a échoué
+    return;
   }
   setSaveStatus('saving');
   saveData(data)
     .then(() => setSaveStatus('saved'))
     .catch(() => setSaveStatus('error'));
 }, [data, isLoaded]);
+
+useEffect(() => {
+  if (!isLoaded) return;
+  if ((data as any)._loadError) return;
+
+  const LAST_BACKUP_KEY = 'last_auto_backup';
+  const lastBackup = localStorage.getItem(LAST_BACKUP_KEY);
+  const now = Date.now();
+
+  if (!lastBackup || now - parseInt(lastBackup) > 24 * 60 * 60 * 1000) {
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      version: '1.0',
+      data
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const date = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `backup-1MA-auto-${date}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    localStorage.setItem(LAST_BACKUP_KEY, now.toString());
+  }
+}, [isLoaded]);
 
 const addStudent = (s: Omit<Student, 'id'>) => {
   const newStudent = { ...s, id: Math.random().toString(36).substr(2, 9) };
