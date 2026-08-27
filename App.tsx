@@ -297,13 +297,15 @@ const App: React.FC = () => {
   );
 
   // Profil non supporté → page en développement
-  if (!isFirstPrimary(profile)) return (
-    <DevPage
-      fullName={profile.fullName}
-      subjects={profile.subjects}
-      years={profile.years}
-    />
-  );
+if (!isFirstPrimary(profile)) return (
+  <DevPage
+    userId={profile.id}
+    fullName={profile.fullName}
+    subjects={profile.subjects}
+    years={profile.years}
+    onProfileUpdated={() => loadProfile(session.user.id)}
+  />
+);
 
   // Chargement des données
   if (!isLoaded) {
