@@ -1,14 +1,8 @@
-// ============================================================
-// storage.ts — Gestion de la persistance via Supabase
-// Écriture directe dans Supabase à chaque modification
-// Realtime géré dans App.tsx via un channel Supabase
-// ============================================================
-
 import { Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../types';
 import { supabase } from './supabaseClient';
 
 // ============================================================
-// CHARGEMENT INITIAL — Charge toutes les tables en parallèle
+// CHARGEMENT INITIAL
 // ============================================================
 export const fetchAll = async () => {
   const [
@@ -39,7 +33,7 @@ export const fetchAll = async () => {
 };
 
 // ============================================================
-// MAPPERS — Convertit les lignes Supabase (snake_case) vers les types de l'app (camelCase)
+// MAPPERS
 // ============================================================
 const mapStudent = (row: any): Student => ({
   id: row.id,
@@ -96,9 +90,10 @@ const mapNote = (row: any): Note => ({
 // ============================================================
 // ÉLÈVES
 // ============================================================
-export const dbAddStudent = async (student: Student) => {
+export const dbAddStudent = async (student: Student, userId: string) => {
   await supabase.from('students').insert({
     id: student.id,
+    user_id: userId,
     first_name: student.firstName,
     last_name: student.lastName,
     observations: student.observations,
@@ -124,9 +119,10 @@ export const dbDeleteStudent = async (id: string) => {
 // ============================================================
 // ACTIVITÉS
 // ============================================================
-export const dbAddActivity = async (activity: Activity) => {
+export const dbAddActivity = async (activity: Activity, userId: string) => {
   await supabase.from('activities').insert({
     id: activity.id,
+    user_id: userId,
     title: activity.title,
     date: activity.date,
     subject: activity.subject,
@@ -160,10 +156,11 @@ export const dbDeleteActivity = async (id: string) => {
 // ============================================================
 // ÉVALUATIONS
 // ============================================================
-export const dbSaveEvaluation = async (evaluation: Evaluation) => {
+export const dbSaveEvaluation = async (evaluation: Evaluation, userId: string) => {
   const id = `${evaluation.studentId}_${evaluation.activityId}`;
   await supabase.from('evaluations').upsert({
     id,
+    user_id: userId,
     student_id: evaluation.studentId,
     activity_id: evaluation.activityId,
     is_present: evaluation.isPresent,
@@ -183,10 +180,11 @@ export const dbDeleteEvaluationsForStudent = async (studentId: string) => {
 // ============================================================
 // COMMENTAIRES HEBDOMADAIRES
 // ============================================================
-export const dbSaveWeeklyComment = async (comment: WeeklyComment) => {
+export const dbSaveWeeklyComment = async (comment: WeeklyComment, userId: string) => {
   const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
   await supabase.from('weekly_comments').upsert({
     id,
+    user_id: userId,
     student_id: comment.studentId,
     cycle: comment.cycle,
     week: comment.week,
@@ -201,10 +199,11 @@ export const dbDeleteWeeklyCommentsForStudent = async (studentId: string) => {
 // ============================================================
 // RAPPORTS IA
 // ============================================================
-export const dbSaveAIReport = async (report: AIReport) => {
+export const dbSaveAIReport = async (report: AIReport, userId: string) => {
   const id = `${report.studentId}_${report.cycle}`;
   await supabase.from('ai_reports').upsert({
     id,
+    user_id: userId,
     student_id: report.studentId,
     cycle: report.cycle,
     content: report.content,
@@ -219,9 +218,10 @@ export const dbDeleteAIReportsForStudent = async (studentId: string) => {
 // ============================================================
 // NOTES
 // ============================================================
-export const dbAddNote = async (note: Note) => {
+export const dbAddNote = async (note: Note, userId: string) => {
   await supabase.from('notes').insert({
     id: note.id,
+    user_id: userId,
     title: note.title,
     content: note.content,
     todos: note.todos,
@@ -243,7 +243,7 @@ export const dbDeleteNote = async (id: string) => {
 };
 
 // ============================================================
-// EXPORT JSON — Backup complet
+// EXPORT JSON
 // ============================================================
 export const exportJSON = (data: any) => {
   const backup = {
