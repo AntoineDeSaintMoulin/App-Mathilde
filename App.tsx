@@ -24,6 +24,7 @@ import {
   dbAddNote, dbUpdateNote, dbDeleteNote,
 } from './utils/storage';
 import { supabase } from './utils/supabaseClient';
+import { keepAlive } from './utils/keepAlive';
 
 import StudentList from './components/StudentList';
 import ActivityManager from './components/ActivityManager';
@@ -68,6 +69,7 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    keepAlive();
     loadAll();
 
     // Realtime — dès qu'une table change dans Supabase, on recharge tout
