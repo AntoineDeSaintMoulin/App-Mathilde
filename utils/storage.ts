@@ -1,200 +1,262 @@
 // ============================================================
-// storage.ts — Gestion de la persistance des données via Supabase
-// Toutes les données de l'app sont stockées dans Supabase (PostgreSQL cloud).
-// Ce fichier gère le chargement, la sauvegarde et l'export des données.
+// storage.ts — Gestion de la persistance via Supabase
+// Écriture directe dans Supabase à chaque modification
+// Realtime géré dans App.tsx via un channel Supabase
 // ============================================================
 
-import { AppData } from '../types';
+import { Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../types';
 import { supabase } from './supabaseClient';
 
-// Identifiant fixe de l'utilisatrice — toutes les données sont filtrées par cet ID
-const USER_ID = 'mathilde';
+// ============================================================
+// CHARGEMENT INITIAL — Charge toutes les tables en parallèle
+// ============================================================
+export const fetchAll = async () => {
+  const [
+    studentsRes,
+    activitiesRes,
+    evaluationsRes,
+    weeklyCommentsRes,
+    aiReportsRes,
+    notesRes,
+  ] = await Promise.all([
+    supabase.from('students').select('*').order('last_name', { ascending: true }),
+    supabase.from('activities').select('*').order('date', { ascending: false }),
+    supabase.from('evaluations').select('*'),
+    supabase.from('weekly_comments').select('*'),
+    supabase.from('ai_reports').select('*'),
+    supabase.from('notes').select('*').order('updated_at', { ascending: false }),
+  ]);
 
-// Structure vide par défaut — utilisée comme base lors du chargement
-// Si une table est vide en base, elle sera initialisée avec un tableau vide
-const DEFAULT_DATA: AppData = {
-  students: [],
-  activities: [],
-  evaluations: [],
-  weeklyComments: [],
-  aiReports: [],
-  notes: [],
+  return {
+    students: (studentsRes.data || []).map(mapStudent),
+    activities: (activitiesRes.data || []).map(mapActivity),
+    evaluations: (evaluationsRes.data || []).map(mapEvaluation),
+    weeklyComments: (weeklyCommentsRes.data || []).map(mapWeeklyComment),
+    aiReports: (aiReportsRes.data || []).map(mapAIReport),
+    notes: (notesRes.data || []).map(mapNote),
+    _loadError: !!(studentsRes.error || activitiesRes.error || evaluationsRes.error),
+  };
 };
 
 // ============================================================
-// CHARGEMENT — Récupère toutes les données depuis Supabase
+// MAPPERS — Convertit les lignes Supabase (snake_case) vers les types de l'app (camelCase)
 // ============================================================
-export const loadData = async (): Promise<AppData> => {
-  // On part des données vides par défaut
-  const result: AppData = { ...DEFAULT_DATA };
-  
-  // Drapeau qui sera mis à true si une erreur Supabase survient
-  // (ex: base en pause, réseau coupé, problème d'authentification)
-  let hasError = false;
+const mapStudent = (row: any): Student => ({
+  id: row.id,
+  firstName: row.first_name,
+  lastName: row.last_name,
+  observations: row.observations || '',
+  birthDate: row.birth_date || '',
+  parentPhones: row.parent_phones || '',
+});
 
-  // Liste de toutes les tables à charger avec leur correspondance
-  // entre la clé TypeScript (ex: weeklyComments) et le nom de table Supabase (ex: weekly_comments)
-  const tables: { key: keyof AppData; table: string }[] = [
-    { key: 'students', table: 'students' },
-    { key: 'activities', table: 'activities' },
-    { key: 'evaluations', table: 'evaluations' },
-    { key: 'weeklyComments', table: 'weekly_comments' },
-    { key: 'aiReports', table: 'ai_reports' },
-    { key: 'notes', table: 'notes' },
-  ];
+const mapActivity = (row: any): Activity => ({
+  id: row.id,
+  title: row.title,
+  date: row.date,
+  subject: row.subject,
+  domain: row.domain,
+  difficulty: row.difficulty,
+  description: row.description || '',
+  objective: row.objective || '',
+  competencies: row.competencies || '',
+  material: row.material || '',
+});
 
-  // On charge chaque table une par une
-  for (const { key, table } of tables) {
-    const { data, error } = await supabase
-      .from(table)
-      .select('data')         // On ne récupère que la colonne 'data' (le JSON de chaque entrée)
-      .eq('user_id', USER_ID); // On filtre uniquement les données de Mathilde
+const mapEvaluation = (row: any): Evaluation => ({
+  studentId: row.student_id,
+  activityId: row.activity_id,
+  isPresent: row.is_present,
+  grade: Number(row.grade),
+  comment: row.comment || '',
+});
 
-    if (error) {
-      // Erreur Supabase — on note l'erreur mais on continue pour les autres tables
-      // Le drapeau hasError permettra de bloquer toute sauvegarde ultérieure
-      hasError = true;
-      console.error(`Erreur chargement ${table}:`, error);
-    } else if (data) {
-      // Succès — on extrait le contenu JSON de chaque ligne et on peuple le résultat
-      (result as any)[key] = data.map((row: any) => row.data);
-    }
-  }
+const mapWeeklyComment = (row: any): WeeklyComment => ({
+  studentId: row.student_id,
+  cycle: row.cycle,
+  week: row.week,
+  content: row.content || '',
+});
 
-  // On attache le drapeau d'erreur aux données retournées
-  // Ce drapeau sera lu par saveData pour bloquer toute sauvegarde si le chargement a échoué
-  (result as any)._loadError = hasError;
-  return result;
+const mapAIReport = (row: any): AIReport => ({
+  studentId: row.student_id,
+  cycle: row.cycle,
+  content: row.content,
+  generatedAt: row.generated_at,
+});
+
+const mapNote = (row: any): Note => ({
+  id: row.id,
+  title: row.title || '',
+  content: row.content || '',
+  todos: row.todos || [],
+  updatedAt: row.updated_at,
+});
+
+// ============================================================
+// ÉLÈVES
+// ============================================================
+export const dbAddStudent = async (student: Student) => {
+  await supabase.from('students').insert({
+    id: student.id,
+    first_name: student.firstName,
+    last_name: student.lastName,
+    observations: student.observations,
+    birth_date: student.birthDate || '',
+    parent_phones: student.parentPhones || '',
+  });
+};
+
+export const dbUpdateStudent = async (student: Student) => {
+  await supabase.from('students').update({
+    first_name: student.firstName,
+    last_name: student.lastName,
+    observations: student.observations,
+    birth_date: student.birthDate || '',
+    parent_phones: student.parentPhones || '',
+  }).eq('id', student.id);
+};
+
+export const dbDeleteStudent = async (id: string) => {
+  await supabase.from('students').delete().eq('id', id);
 };
 
 // ============================================================
-// PROTECTION INDIVIDUELLE PAR TABLE
-// Synchronise une table Supabase avec les données locales
-// avec une protection contre l'écrasement accidentel de données existantes
+// ACTIVITÉS
 // ============================================================
-const syncTable = async (table: string, rows: { id: string; user_id: string; data: any }[]) => {
-  
-  // PROTECTION CLÉ : avant toute suppression, on vérifie si la table
-  // contient déjà des données en base
-  const { data: existing } = await supabase
-    .from(table)
-    .select('id')
-    .eq('user_id', USER_ID)
-    .limit(1); // On ne récupère qu'une ligne — on veut juste savoir si la table est vide ou non
+export const dbAddActivity = async (activity: Activity) => {
+  await supabase.from('activities').insert({
+    id: activity.id,
+    title: activity.title,
+    date: activity.date,
+    subject: activity.subject,
+    domain: activity.domain,
+    difficulty: activity.difficulty,
+    description: activity.description,
+    objective: activity.objective || '',
+    competencies: activity.competencies,
+    material: activity.material || '',
+  });
+};
 
-  // Si la table est PLEINE en base ET qu'on veut sauvegarder des données VIDES
-  // → c'est suspect, on bloque pour éviter d'écraser des données existantes
-  // Cas typique : Supabase était en pause, l'app a chargé des données vides,
-  // et maintenant elle veut écraser les vraies données avec du vide
-  if (existing && existing.length > 0 && rows.length === 0) {
-    console.warn(`Sauvegarde bloquée pour ${table} — tentative d'écrasement avec données vides`);
-    return; // On sort sans rien modifier
-  }
+export const dbUpdateActivity = async (activity: Activity) => {
+  await supabase.from('activities').update({
+    title: activity.title,
+    date: activity.date,
+    subject: activity.subject,
+    domain: activity.domain,
+    difficulty: activity.difficulty,
+    description: activity.description,
+    objective: activity.objective || '',
+    competencies: activity.competencies,
+    material: activity.material || '',
+  }).eq('id', activity.id);
+};
 
-  // Cas normal : on supprime les anciennes données puis on réinsère les nouvelles
-  // C'est une stratégie "remplace tout" qui garantit la cohérence
-  await supabase.from(table).delete().eq('user_id', USER_ID);
-  if (rows.length > 0) {
-    await supabase.from(table).insert(rows);
-  }
+export const dbDeleteActivity = async (id: string) => {
+  await supabase.from('activities').delete().eq('id', id);
 };
 
 // ============================================================
-// SAUVEGARDE — Envoie toutes les données locales vers Supabase
-// Deux niveaux de protection avant toute écriture
+// ÉVALUATIONS
 // ============================================================
-export const saveData = async (data: AppData): Promise<void> => {
+export const dbSaveEvaluation = async (evaluation: Evaluation) => {
+  const id = `${evaluation.studentId}_${evaluation.activityId}`;
+  await supabase.from('evaluations').upsert({
+    id,
+    student_id: evaluation.studentId,
+    activity_id: evaluation.activityId,
+    is_present: evaluation.isPresent,
+    grade: evaluation.grade,
+    comment: evaluation.comment,
+  });
+};
 
-  // PROTECTION NIVEAU 1 : si loadData a détecté une erreur Supabase,
-  // on bloque immédiatement toute sauvegarde — les données en mémoire
-  // ne sont pas fiables car elles n'ont pas été correctement chargées
-  if ((data as any)._loadError) {
-    throw new Error('Données non fiables — sauvegarde bloquée');
-  }
+export const dbDeleteEvaluationsForActivity = async (activityId: string) => {
+  await supabase.from('evaluations').delete().eq('activity_id', activityId);
+};
 
-  // PROTECTION NIVEAU 2 : si students, activities ET evaluations sont tous vides
-  // simultanément, c'est anormal — une vraie classe a toujours au moins un élève
-  // Cela indique très probablement un chargement raté sans erreur explicite
-  if (data.activities.length === 0 && data.evaluations.length === 0 && data.students.length === 0) {
-    console.warn('Sauvegarde bloquée — données suspectes (tout est vide)');
-    throw new Error('Données suspectes — sauvegarde bloquée');
-  }
-
-  // Sauvegarde de chaque table via syncTable qui applique sa propre protection individuelle
-  
-  // Élèves — identifiés par leur id unique
-  await syncTable('students', data.students.map(item => ({
-    id: item.id,
-    user_id: USER_ID,
-    data: item
-  })));
-
-  // Activités pédagogiques — identifiées par leur id unique
-  await syncTable('activities', data.activities.map(item => ({
-    id: item.id,
-    user_id: USER_ID,
-    data: item
-  })));
-
-  // Notes personnelles — identifiées par leur id unique
-  await syncTable('notes', data.notes.map(item => ({
-    id: item.id,
-    user_id: USER_ID,
-    data: item
-  })));
-
-  // Évaluations — identifiées par la combinaison élève + activité
-  // (un élève ne peut avoir qu'une évaluation par activité)
-  await syncTable('evaluations', data.evaluations.map(eval_ => ({
-    id: `${eval_.studentId}_${eval_.activityId}`,
-    user_id: USER_ID,
-    data: eval_
-  })));
-
-  // Commentaires hebdomadaires — identifiés par élève + cycle + semaine
-  // (un commentaire unique par élève, par semaine, par trimestre)
-  await syncTable('weekly_comments', data.weeklyComments.map(comment => ({
-    id: `${comment.studentId}_${comment.cycle}_${comment.week}`,
-    user_id: USER_ID,
-    data: comment
-  })));
-
-  // Rapports IA — identifiés par élève + cycle
-  // (un rapport unique par élève, par trimestre)
-  await syncTable('ai_reports', data.aiReports.map(report => ({
-    id: `${report.studentId}_${report.cycle}`,
-    user_id: USER_ID,
-    data: report
-  })));
+export const dbDeleteEvaluationsForStudent = async (studentId: string) => {
+  await supabase.from('evaluations').delete().eq('student_id', studentId);
 };
 
 // ============================================================
-// EXPORT CSV — Génère et télécharge un fichier CSV
-// Utilisé pour exporter les données de synthèse
+// COMMENTAIRES HEBDOMADAIRES
 // ============================================================
-export const exportToCSV = (data: any[], filename: string) => {
-  // Si pas de données, on ne génère rien
-  if (data.length === 0) return;
+export const dbSaveWeeklyComment = async (comment: WeeklyComment) => {
+  const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
+  await supabase.from('weekly_comments').upsert({
+    id,
+    student_id: comment.studentId,
+    cycle: comment.cycle,
+    week: comment.week,
+    content: comment.content,
+  });
+};
 
-  // On récupère les en-têtes depuis les clés du premier objet
-  const headers = Object.keys(data[0]);
+export const dbDeleteWeeklyCommentsForStudent = async (studentId: string) => {
+  await supabase.from('weekly_comments').delete().eq('student_id', studentId);
+};
 
-  // On construit le contenu CSV :
-  // - première ligne : les en-têtes
-  // - lignes suivantes : les valeurs, entourées de guillemets pour gérer les virgules et accents
-  const csvContent = [
-    headers.join(','),
-    ...data.map(row => headers.map(header => 
-      `"${row[header]?.toString().replace(/"/g, '""') || ''}"`
-    ).join(','))
-  ].join('\n');
+// ============================================================
+// RAPPORTS IA
+// ============================================================
+export const dbSaveAIReport = async (report: AIReport) => {
+  const id = `${report.studentId}_${report.cycle}`;
+  await supabase.from('ai_reports').upsert({
+    id,
+    student_id: report.studentId,
+    cycle: report.cycle,
+    content: report.content,
+    generated_at: report.generatedAt,
+  });
+};
 
-  // On crée un fichier blob et on déclenche le téléchargement
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
+export const dbDeleteAIReportsForStudent = async (studentId: string) => {
+  await supabase.from('ai_reports').delete().eq('student_id', studentId);
+};
+
+// ============================================================
+// NOTES
+// ============================================================
+export const dbAddNote = async (note: Note) => {
+  await supabase.from('notes').insert({
+    id: note.id,
+    title: note.title,
+    content: note.content,
+    todos: note.todos,
+    updated_at: note.updatedAt,
+  });
+};
+
+export const dbUpdateNote = async (note: Note) => {
+  await supabase.from('notes').update({
+    title: note.title,
+    content: note.content,
+    todos: note.todos,
+    updated_at: note.updatedAt,
+  }).eq('id', note.id);
+};
+
+export const dbDeleteNote = async (id: string) => {
+  await supabase.from('notes').delete().eq('id', id);
+};
+
+// ============================================================
+// EXPORT JSON — Backup complet
+// ============================================================
+export const exportJSON = (data: any) => {
+  const backup = {
+    exportedAt: new Date().toISOString(),
+    version: '2.0',
+    data,
+  };
+  const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const date = new Date().toISOString().split('T')[0];
   link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
+  link.setAttribute('download', `backup-1MA-${date}.json`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
