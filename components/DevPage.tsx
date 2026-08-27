@@ -8,6 +8,7 @@ interface Props {
   subjects: string[];
   years: string[];
   onProfileUpdated: () => void;
+  inModal?: boolean;
 }
 
 const SUBJECTS = [
@@ -119,20 +120,22 @@ const DevPage: React.FC<Props> = ({ userId, fullName, subjects, years, onProfile
           <span className="font-black text-sm tracking-tighter">1MA.app</span>
         </div>
 
-        <div className="flex flex-col gap-3 w-full">
-          <button
-            onClick={() => setShowEdit(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm shadow-md"
-          >
-            <Edit3 size={16} /> Modifier mon profil
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all text-sm"
-          >
-            <LogOut size={16} /> Se déconnecter
-          </button>
-        </div>
+        {!inModal && (
+  <div className="flex flex-col gap-3 w-full">
+    <button
+      onClick={() => setShowEdit(true)}
+      className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all text-sm shadow-md"
+    >
+      <Edit3 size={16} /> Modifier mon profil
+    </button>
+    <button
+      onClick={handleLogout}
+      className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all text-sm"
+    >
+      <LogOut size={16} /> Se déconnecter
+    </button>
+  </div>
+)}
       </div>
 
       {/* Modale de modification */}
