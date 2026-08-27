@@ -316,6 +316,17 @@ const App: React.FC = () => {
     />
   );
 
+if (isS1Math(profile) && !isLoaded) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="flex flex-col items-center gap-4 text-slate-400">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <p className="font-bold text-sm uppercase tracking-widest">Chargement...</p>
+      </div>
+    </div>
+  );
+}
+
 if (isS1Math(profile) && isLoaded) return (
   <AppS1Math
     profile={profile}
@@ -338,8 +349,8 @@ if (isS1Math(profile) && isLoaded) return (
     handleImportJSON={handleImportJSON}
   />
 );
-  
-  if (!isFirstPrimary(profile)) return (
+
+if (!isFirstPrimary(profile)) return (
     <DevPage
       userId={profile.id}
       fullName={profile.fullName}
