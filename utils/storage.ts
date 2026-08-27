@@ -1,9 +1,6 @@
 import { Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../types';
 import { supabase } from './supabaseClient';
 
-// ============================================================
-// CHARGEMENT INITIAL
-// ============================================================
 export const fetchAll = async () => {
   const [
     studentsRes,
@@ -20,7 +17,6 @@ export const fetchAll = async () => {
     supabase.from('ai_reports').select('*'),
     supabase.from('notes').select('*').order('updated_at', { ascending: false }),
   ]);
-
   return {
     students: (studentsRes.data || []).map(mapStudent),
     activities: (activitiesRes.data || []).map(mapActivity),
@@ -32,9 +28,6 @@ export const fetchAll = async () => {
   };
 };
 
-// ============================================================
-// MAPPERS
-// ============================================================
 const mapStudent = (row: any): Student => ({
   id: row.id,
   firstName: row.first_name,
@@ -48,6 +41,7 @@ const mapActivity = (row: any): Activity => ({
   id: row.id,
   title: row.title,
   date: row.date,
+  cycle: Number(row.cycle) || 1,
   subject: row.subject,
   domain: row.domain,
   difficulty: row.difficulty,
@@ -63,7 +57,6 @@ const mapEvaluation = (row: any): Evaluation => ({
   isPresent: row.is_present,
   grade: Number(row.grade),
   comment: row.comment || '',
-  cycle: Number(row.cycle) || 1,
 });
 
 const mapWeeklyComment = (row: any): WeeklyComment => ({
@@ -88,9 +81,6 @@ const mapNote = (row: any): Note => ({
   updatedAt: row.updated_at,
 });
 
-// ============================================================
-// ÉLÈVES
-// ============================================================
 export const dbAddStudent = async (student: Student, userId: string) => {
   await supabase.from('students').insert({
     id: student.id,
@@ -117,15 +107,13 @@ export const dbDeleteStudent = async (id: string) => {
   await supabase.from('students').delete().eq('id', id);
 };
 
-// ============================================================
-// ACTIVITÉS
-// ============================================================
 export const dbAddActivity = async (activity: Activity, userId: string) => {
   await supabase.from('activities').insert({
     id: activity.id,
     user_id: userId,
     title: activity.title,
     date: activity.date,
+    cycle: activity.cycle,
     subject: activity.subject,
     domain: activity.domain,
     difficulty: activity.difficulty,
@@ -133,7 +121,6 @@ export const dbAddActivity = async (activity: Activity, userId: string) => {
     objective: activity.objective || '',
     competencies: activity.competencies,
     material: activity.material || '',
-    cycle: activity.cycle,
   });
 };
 
@@ -141,6 +128,7 @@ export const dbUpdateActivity = async (activity: Activity) => {
   await supabase.from('activities').update({
     title: activity.title,
     date: activity.date,
+    cycle: activity.cycle,
     subject: activity.subject,
     domain: activity.domain,
     difficulty: activity.difficulty,
@@ -148,7 +136,6 @@ export const dbUpdateActivity = async (activity: Activity) => {
     objective: activity.objective || '',
     competencies: activity.competencies,
     material: activity.material || '',
-    cycle: activity.cycle,
   }).eq('id', activity.id);
 };
 
@@ -156,9 +143,6 @@ export const dbDeleteActivity = async (id: string) => {
   await supabase.from('activities').delete().eq('id', id);
 };
 
-// ============================================================
-// ÉVALUATIONS
-// ============================================================
 export const dbSaveEvaluation = async (evaluation: Evaluation, userId: string) => {
   const id = `${evaluation.studentId}_${evaluation.activityId}`;
   await supabase.from('evaluations').upsert({
@@ -180,9 +164,6 @@ export const dbDeleteEvaluationsForStudent = async (studentId: string) => {
   await supabase.from('evaluations').delete().eq('student_id', studentId);
 };
 
-// ============================================================
-// COMMENTAIRES HEBDOMADAIRES
-// ============================================================
 export const dbSaveWeeklyComment = async (comment: WeeklyComment, userId: string) => {
   const id = `${comment.studentId}_${comment.cycle}_${comment.week}`;
   await supabase.from('weekly_comments').upsert({
@@ -199,9 +180,6 @@ export const dbDeleteWeeklyCommentsForStudent = async (studentId: string) => {
   await supabase.from('weekly_comments').delete().eq('student_id', studentId);
 };
 
-// ============================================================
-// RAPPORTS IA
-// ============================================================
 export const dbSaveAIReport = async (report: AIReport, userId: string) => {
   const id = `${report.studentId}_${report.cycle}`;
   await supabase.from('ai_reports').upsert({
@@ -218,9 +196,6 @@ export const dbDeleteAIReportsForStudent = async (studentId: string) => {
   await supabase.from('ai_reports').delete().eq('student_id', studentId);
 };
 
-// ============================================================
-// NOTES
-// ============================================================
 export const dbAddNote = async (note: Note, userId: string) => {
   await supabase.from('notes').insert({
     id: note.id,
@@ -245,9 +220,6 @@ export const dbDeleteNote = async (id: string) => {
   await supabase.from('notes').delete().eq('id', id);
 };
 
-// ============================================================
-// EXPORT JSON
-// ============================================================
 export const exportJSON = (data: any) => {
   const backup = {
     exportedAt: new Date().toISOString(),
