@@ -14,3 +14,10 @@ root.render(
     <App />
   </React.StrictMode>
 );
+
+export const getCycleFromDate = (dateStr: string): 1 | 2 | 3 => {
+  const month = new Date(dateStr).getMonth() + 1;
+  if (month >= 8 && month <= 11) return 1;
+  if (month === 12 || (month >= 1 && month <= 3)) return 2;
+  return 3;
+};
