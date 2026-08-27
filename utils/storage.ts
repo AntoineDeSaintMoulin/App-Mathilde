@@ -63,6 +63,7 @@ const mapEvaluation = (row: any): Evaluation => ({
   isPresent: row.is_present,
   grade: Number(row.grade),
   comment: row.comment || '',
+  cycle: row.cycle || 1,
 });
 
 const mapWeeklyComment = (row: any): WeeklyComment => ({
@@ -132,6 +133,7 @@ export const dbAddActivity = async (activity: Activity, userId: string) => {
     objective: activity.objective || '',
     competencies: activity.competencies,
     material: activity.material || '',
+    cycle: activity.cycle,
   });
 };
 
@@ -146,6 +148,7 @@ export const dbUpdateActivity = async (activity: Activity) => {
     objective: activity.objective || '',
     competencies: activity.competencies,
     material: activity.material || '',
+    cycle: activity.cycle,
   }).eq('id', activity.id);
 };
 
