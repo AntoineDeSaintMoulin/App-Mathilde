@@ -19,6 +19,7 @@ export interface Activity {
   id: string;
   title: string;
   date: string;
+  cycle: 1 | 2 | 3;
   subject: Subject;
   domain: string;
   difficulty: 1 | 2 | 3 | 4 | 5;
