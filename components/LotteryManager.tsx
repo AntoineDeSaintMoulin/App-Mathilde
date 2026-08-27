@@ -118,7 +118,11 @@ const LotteryManager: React.FC<Props> = ({ students, activities, evaluations }) 
             <select
               className="w-full p-2.5 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
               value={selectedActivityId}
-              onChange={e => { setSelectedActivityId(e.target.value); setResult(null); }}
+              onChange={e => { 
+  setSelectedActivityId(e.target.value); 
+  setResult(null);
+  setExcludedManual([]); // Réinitialise les exclusions manuelles à chaque changement d'activité
+}}
             >
               <option value="">Aucune activité liée</option>
               {activities.map(a => (
