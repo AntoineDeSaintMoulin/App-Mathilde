@@ -379,21 +379,52 @@ const App: React.FC = () => {
             <input ref={importRef} type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
           </div>
           <div className="flex items-center gap-3 px-2 text-xs">
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white shrink-0">
-              <Settings size={14} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">{profile.fullName}</p>
-              <p className="text-slate-500 italic">Enseignant(e)</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="shrink-0 p-2 text-slate-500 hover:text-red-400 transition-colors"
-              title="Se déconnecter"
-            >
-              <LogOut size={14} />
-            </button>
-          </div>
+  <button
+    onClick={() => setShowProfileEdit(true)}
+    className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white shrink-0 hover:bg-slate-600 transition-colors"
+    title="Modifier mon profil"
+  >
+    <Settings size={14} />
+  </button>
+  <div className="flex-1 min-w-0">
+    <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">{profile.fullName}</p>
+    <p className="text-slate-500 italic">Enseignant(e)</p>
+  </div>
+  <button
+    onClick={handleLogout}
+    className="shrink-0 p-2 text-slate-500 hover:text-red-400 transition-colors"
+    title="Se déconnecter"
+  >
+    <LogOut size={14} />
+  </button>
+</div>
+
+{/* Modale modification profil */}
+{showProfileEdit && (
+  <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DevPage
+        userId={profile.id}
+        fullName={profile.fullName}
+        subjects={profile.subjects}
+        years={profile.years}
+        onProfileUpdated={() => {
+          loadProfile(session.user.id);
+          setShowProfileEdit(false);
+        }}
+        inModal
+      />
+      <div className="p-4 border-t">
+        <button
+          onClick={() => setShowProfileEdit(false)}
+          className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
+        >
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </nav>
 
