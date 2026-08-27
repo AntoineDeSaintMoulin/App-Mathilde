@@ -26,7 +26,7 @@ const PRIMARY_YEARS = [1, 2, 3, 4, 5, 6];
 const SECONDARY_YEARS = [1, 2, 3, 4, 5, 6];
 
 const DevPage: React.FC<Props> = ({ userId, fullName, subjects, years, onProfileUpdated, inModal = false }) => {
-  const [showEdit, setShowEdit] = useState(false);
+  const [showEdit, setShowEdit] = useState(inModal);
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>(subjects);
   const [selectedPrimaryYears, setSelectedPrimaryYears] = useState<number[]>(
     years.filter(y => y.startsWith('P')).map(y => parseInt(y.slice(1)))
