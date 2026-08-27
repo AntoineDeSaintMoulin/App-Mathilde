@@ -63,7 +63,7 @@ const mapEvaluation = (row: any): Evaluation => ({
   isPresent: row.is_present,
   grade: Number(row.grade),
   comment: row.comment || '',
-  cycle: row.cycle || 1,
+  cycle: Number(row.cycle) || 1,
 });
 
 const mapWeeklyComment = (row: any): WeeklyComment => ({
