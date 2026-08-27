@@ -14,21 +14,23 @@ const SynthesisView: React.FC<Props> = ({ data }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<SortOption>('alpha-asc');
 
-  const getStudentAverage = (studentId: string, subject: Subject) => {
-    const studentEvals = data.evaluations.filter(e => {
-      if (e.studentId !== studentId || !e.isPresent) return false;
-      const activity = data.activities.find(a => a.id === e.activityId);
-      return activity?.subject === subject;
-    });
+const getStudentAverage = (studentId: string, subject: Subject) => {
+  const studentEvals = data.evaluations.filter(e => {
+    if (e.studentId !== studentId || !e.isPresent) return false;
+    const activity = data.activities.find(a => a.id === e.activityId);
+    return activity?.subject === subject && activity?.cycle === selectedCycle;
+  });
     if (studentEvals.length === 0) return null;
     const totalScore = studentEvals.reduce((acc, curr) => acc + curr.grade, 0);
     return parseFloat((totalScore / studentEvals.length).toFixed(1));
   };
 
-  const getGlobalAverage = (studentId: string) => {
-    const allEvals = data.evaluations.filter(e => 
-      e.studentId === studentId && e.isPresent && e.grade > 0
-    );
+const getGlobalAverage = (studentId: string) => {
+  const allEvals = data.evaluations.filter(e => {
+    if (e.studentId !== studentId || !e.isPresent || e.grade <= 0) return false;
+    const activity = data.activities.find(a => a.id === e.activityId);
+    return activity?.cycle === selectedCycle;
+  });
     if (allEvals.length === 0) return null;
     const total = allEvals.reduce((acc, curr) => acc + curr.grade, 0);
     return parseFloat((total / allEvals.length).toFixed(1));
