@@ -147,8 +147,8 @@ const App: React.FC = () => {
     setIsLoaded(true);
   }, []);
 
-  useEffect(() => {
-    if (!profile || !isFirstPrimary(profile)) return;
+useEffect(() => {
+    if (!profile || (!isFirstPrimary(profile) && !isS1Math(profile))) return;
 
     keepAlive();
     loadAll();
