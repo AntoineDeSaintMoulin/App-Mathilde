@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Calendar, BookOpen, Target, List, Trash2, Edit3, Search } from 'lucide-react';
 import { Activity, Subject } from '../types';
-import { SUBJECTS, DOMAINS } from '../constants';
 import { SUBJECTS, DOMAINS, getCycleFromDate } from '../constants';
 
 interface Props {
