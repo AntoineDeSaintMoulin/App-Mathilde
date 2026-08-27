@@ -30,7 +30,7 @@ const AuthScreen: React.FC = () => {
           <div className="bg-blue-600 p-4 rounded-2xl shadow-lg shadow-blue-500/20">
             <GraduationCap size={40} className="text-white" />
           </div>
-          <h1 className="font-black text-3xl text-slate-900 tracking-tighter">EduSuivi</h1>
+          <h1 className="font-black text-3xl text-slate-900 tracking-tighter">1MA.app</h1>
           <p className="text-slate-400 text-sm font-medium text-center">
             La plateforme de suivi pédagogique pour les enseignants
           </p>
