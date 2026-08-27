@@ -1,4 +1,4 @@
-
+import { getCycleFromDate } from '../../constants';
 import React, { useState } from 'react';
 import { Plus, Calendar, Target, List, Trash2, Edit3, Search } from 'lucide-react';
 import { Activity } from '../../types';
@@ -18,17 +18,18 @@ const ActivityManagerS1Math: React.FC<Props> = ({ activities, onAdd, onUpdate, o
   const [searchText, setSearchText] = useState('');
   const [searchSubjects, setSearchSubjects] = useState<SubjectS1Math[]>([]);
 
-  const [formData, setFormData] = useState<Omit<Activity, 'id'>>({
-    title: '',
-    date: new Date().toISOString().split('T')[0],
-    subject: 'géométrie',
-    domain: '',
-    difficulty: 3,
-    description: '',
-    objective: '',
-    competencies: '',
-    material: ''
-  });
+const [formData, setFormData] = useState<Omit<Activity, 'id'>>({
+  title: '',
+  date: new Date().toISOString().split('T')[0],
+  cycle: getCycleFromDate(new Date().toISOString().split('T')[0]),
+  subject: 'mathématiques',
+  domain: '',
+  difficulty: 3,
+  description: '',
+  objective: '',
+  competencies: '',
+  material: ''
+});
 
   const filteredActivities = activities.filter(activity => {
     const matchesText = activity.title.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -48,18 +49,20 @@ const ActivityManagerS1Math: React.FC<Props> = ({ activities, onAdd, onUpdate, o
     closeForm();
   };
 
-  const openEditForm = (activity: Activity) => {
-    setFormData({
-      title: activity.title,
-      date: activity.date,
-      subject: activity.subject,
-      domain: activity.domain,
-      difficulty: activity.difficulty,
-      description: activity.description,
-      objective: activity.objective || '',
-      competencies: activity.competencies,
-      material: activity.material || ''
-    });
+const openEditForm = (activity: Activity) => {
+  setFormData({
+    title: activity.title,
+    date: activity.date,
+    cycle: activity.cycle,
+    subject: activity.subject,
+    domain: activity.domain,
+    difficulty: activity.difficulty,
+    description: activity.description,
+    objective: activity.objective || '',
+    competencies: activity.competencies,
+    material: activity.material || ''
+  });
+    
     setEditingId(activity.id);
     setIsFormOpen(true);
   };
@@ -70,7 +73,8 @@ const ActivityManagerS1Math: React.FC<Props> = ({ activities, onAdd, onUpdate, o
     setFormData({
       title: '',
       date: new Date().toISOString().split('T')[0],
-      subject: 'géométrie',
+      cycle: getCycleFromDate(new Date().toISOString().split('T')[0]),
+      subject: 'mathématiques',
       domain: '',
       difficulty: 3,
       description: '',
@@ -143,16 +147,33 @@ const ActivityManagerS1Math: React.FC<Props> = ({ activities, onAdd, onUpdate, o
                 onChange={e => setFormData({...formData, title: e.target.value})}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Date</label>
-              <input
-                type="date"
-                required
-                className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
-                value={formData.date}
-                onChange={e => setFormData({...formData, date: e.target.value})}
-              />
-            </div>
+<div className="space-y-2">
+  <label className="text-sm font-medium text-slate-700">Date</label>
+  <input
+    type="date"
+    required
+    className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+    value={formData.date}
+    onChange={e => setFormData({
+      ...formData,
+      date: e.target.value,
+      cycle: getCycleFromDate(e.target.value)
+    })}
+  />
+</div>
+
+<div className="space-y-2">
+  <label className="text-sm font-medium text-slate-700">Trimestre</label>
+  <select
+    className="w-full p-2.5 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
+    value={formData.cycle}
+    onChange={e => setFormData({...formData, cycle: parseInt(e.target.value) as 1 | 2 | 3})}
+  >
+    <option value={1}>Trimestre 1 (août — novembre)</option>
+    <option value={2}>Trimestre 2 (décembre — mars)</option>
+    <option value={3}>Trimestre 3 (avril — juillet)</option>
+  </select>
+</div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">Matière</label>
               <select
