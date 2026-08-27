@@ -241,11 +241,6 @@ const App: React.FC = () => {
             <h1 className="font-bold text-2xl leading-tight tracking-tighter">1MA</h1>
             <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Mathilde Lits</p>
           </div>
-          {/* Indicateur de connexion Realtime */}
-          <div className="flex flex-col items-center gap-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
-            <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-500">Live</span>
-          </div>
         </div>
 
         <div className="space-y-1 flex-1">
