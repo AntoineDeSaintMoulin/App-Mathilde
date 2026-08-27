@@ -55,7 +55,6 @@ const EMPTY_DATA: AppData = {
   weeklyComments: [], aiReports: [], notes: [],
 };
 
-// Vérifie si le profil correspond à l'app 1MA (1ère primaire, général ou français/maths)
 const isFirstPrimary = (profile: UserProfile) => {
   const hasP1 = profile.years.includes('P1');
   const hasValidSubject = profile.subjects.some(s =>
@@ -76,7 +75,7 @@ const App: React.FC = () => {
   const importRef = useRef<HTMLInputElement>(null);
 
   // ============================================================
-  // GESTION AUTH — Écoute les changements de session
+  // AUTH
   // ============================================================
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -91,6 +90,8 @@ const App: React.FC = () => {
       else {
         setProfile(null);
         setAuthLoading(false);
+        setData(EMPTY_DATA);
+        setIsLoaded(false);
       }
     });
 
@@ -125,7 +126,7 @@ const App: React.FC = () => {
   };
 
   // ============================================================
-  // CHARGEMENT DONNÉES + REALTIME (uniquement si profil 1MA)
+  // CHARGEMENT DONNÉES + REALTIME
   // ============================================================
   const loadAll = useCallback(async () => {
     const result = await fetchAll();
@@ -173,14 +174,21 @@ const App: React.FC = () => {
     }
   }, [isLoaded]);
 
+  // ID de l'utilisateur connecté
+  const userId = session?.user?.id || '';
+
   // ============================================================
   // ÉLÈVES
   // ============================================================
   const addStudent = async (s: Omit<Student, 'id'>) => {
     const newStudent = { ...s, id: Math.random().toString(36).substr(2, 9) };
-    await dbAddStudent(newStudent);
+    await dbAddStudent(newStudent, userId);
   };
-  const updateStudent = async (updated: Student) => { await dbUpdateStudent(updated); };
+
+  const updateStudent = async (updated: Student) => {
+    await dbUpdateStudent(updated);
+  };
+
   const deleteStudent = async (id: string) => {
     await dbDeleteEvaluationsForStudent(id);
     await dbDeleteWeeklyCommentsForStudent(id);
@@ -193,9 +201,13 @@ const App: React.FC = () => {
   // ============================================================
   const addActivity = async (a: Omit<Activity, 'id'>) => {
     const newActivity = { ...a, id: Math.random().toString(36).substr(2, 9) };
-    await dbAddActivity(newActivity);
+    await dbAddActivity(newActivity, userId);
   };
-  const updateActivity = async (updated: Activity) => { await dbUpdateActivity(updated); };
+
+  const updateActivity = async (updated: Activity) => {
+    await dbUpdateActivity(updated);
+  };
+
   const deleteActivity = async (id: string) => {
     await dbDeleteEvaluationsForActivity(id);
     await dbDeleteActivity(id);
@@ -205,21 +217,23 @@ const App: React.FC = () => {
   // ÉVALUATIONS
   // ============================================================
   const saveEvaluations = async (evals: Evaluation[]) => {
-    for (const eval_ of evals) await dbSaveEvaluation(eval_);
+    for (const eval_ of evals) {
+      await dbSaveEvaluation(eval_, userId);
+    }
   };
 
   // ============================================================
   // COMMENTAIRES HEBDOMADAIRES
   // ============================================================
   const saveWeeklyComment = async (comment: WeeklyComment) => {
-    await dbSaveWeeklyComment(comment);
+    await dbSaveWeeklyComment(comment, userId);
   };
 
   // ============================================================
   // RAPPORTS IA
   // ============================================================
   const saveAIReport = async (report: AIReport) => {
-    await dbSaveAIReport(report);
+    await dbSaveAIReport(report, userId);
   };
 
   // ============================================================
@@ -231,12 +245,16 @@ const App: React.FC = () => {
       id: Math.random().toString(36).substr(2, 9),
       updatedAt: new Date().toISOString(),
     };
-    await dbAddNote(newNote);
+    await dbAddNote(newNote, userId);
   };
+
   const updateNote = async (updated: Note) => {
     await dbUpdateNote({ ...updated, updatedAt: new Date().toISOString() });
   };
-  const deleteNote = async (id: string) => { await dbDeleteNote(id); };
+
+  const deleteNote = async (id: string) => {
+    await dbDeleteNote(id);
+  };
 
   // ============================================================
   // IMPORT JSON
@@ -254,12 +272,12 @@ const App: React.FC = () => {
           return;
         }
         if (!confirm(`Restaurer la sauvegarde du ${new Date(parsed.exportedAt).toLocaleDateString('fr-FR')} ?`)) return;
-        for (const s of importedData.students) await dbAddStudent(s);
-        for (const a of importedData.activities) await dbAddActivity(a);
-        for (const e of importedData.evaluations) await dbSaveEvaluation(e);
-        for (const c of importedData.weeklyComments) await dbSaveWeeklyComment(c);
-        for (const r of importedData.aiReports) await dbSaveAIReport(r);
-        for (const n of importedData.notes) await dbAddNote(n);
+        for (const s of importedData.students) await dbAddStudent(s, userId);
+        for (const a of importedData.activities) await dbAddActivity(a, userId);
+        for (const e of importedData.evaluations) await dbSaveEvaluation(e, userId);
+        for (const c of importedData.weeklyComments) await dbSaveWeeklyComment(c, userId);
+        for (const r of importedData.aiReports) await dbSaveAIReport(r, userId);
+        for (const n of importedData.notes) await dbAddNote(n, userId);
         alert('Restauration terminée !');
       } catch {
         alert('Erreur — impossible de lire ce fichier JSON.');
@@ -270,10 +288,8 @@ const App: React.FC = () => {
   };
 
   // ============================================================
-  // ROUTING — Selon l'état d'authentification et le profil
+  // ROUTING
   // ============================================================
-
-  // Chargement initial
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -285,10 +301,8 @@ const App: React.FC = () => {
     );
   }
 
-  // Non connecté → écran de connexion
   if (!session) return <AuthScreen />;
 
-  // Connecté mais pas de profil → création de profil
   if (!profile) return (
     <ProfileSetup
       userId={session.user.id}
@@ -296,18 +310,16 @@ const App: React.FC = () => {
     />
   );
 
-  // Profil non supporté → page en développement
-if (!isFirstPrimary(profile)) return (
-  <DevPage
-    userId={profile.id}
-    fullName={profile.fullName}
-    subjects={profile.subjects}
-    years={profile.years}
-    onProfileUpdated={() => loadProfile(session.user.id)}
-  />
-);
+  if (!isFirstPrimary(profile)) return (
+    <DevPage
+      userId={profile.id}
+      fullName={profile.fullName}
+      subjects={profile.subjects}
+      years={profile.years}
+      onProfileUpdated={() => loadProfile(session.user.id)}
+    />
+  );
 
-  // Chargement des données
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -320,7 +332,7 @@ if (!isFirstPrimary(profile)) return (
   }
 
   // ============================================================
-  // APP PRINCIPALE — Profil 1ère primaire
+  // APP PRINCIPALE
   // ============================================================
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
