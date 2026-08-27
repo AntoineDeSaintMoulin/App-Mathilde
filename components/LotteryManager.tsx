@@ -13,7 +13,14 @@ type Mode = 'single' | 'sequence' | 'groups';
 const LotteryManager: React.FC<Props> = ({ students, activities, evaluations }) => {
   const [mode, setMode] = useState<Mode>('single');
   const [selectedActivityId, setSelectedActivityId] = useState<string>('');
-  const [excludedManual, setExcludedManual] = useState<string[]>([]);
+const [excludedManual, setExcludedManual] = useState<string[]>([]);
+
+const updateExcluded = (newExcluded: string[]) => {
+  setExcludedManual(newExcluded);
+  if (selectedActivityId) {
+    localStorage.setItem(`lottery_excluded_${selectedActivityId}`, JSON.stringify(newExcluded));
+  }
+};
   const [nbGroups, setNbGroups] = useState(2);
   const [nbPerGroup, setNbPerGroup] = useState(3);
   const [result, setResult] = useState<any>(null);
@@ -35,15 +42,15 @@ const LotteryManager: React.FC<Props> = ({ students, activities, evaluations }) 
 
   const eligibleStudents = students.filter(s => getStudentStatus(s.id).included);
 
-  const toggleManual = (studentId: string) => {
-    if (alreadyGraded.includes(studentId)) return; // Ne peut pas modifier les "déjà notés"
-    setExcludedManual(prev =>
-      prev.includes(studentId)
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    );
-    setResult(null);
-  };
+const toggleManual = (studentId: string) => {
+  if (alreadyGraded.includes(studentId)) return;
+  updateExcluded(
+    excludedManual.includes(studentId)
+      ? excludedManual.filter(id => id !== studentId)
+      : [...excludedManual, studentId]
+  );
+  setResult(null);
+};
 
   const shuffle = <T,>(arr: T[]): T[] => {
     const a = [...arr];
@@ -75,10 +82,10 @@ const LotteryManager: React.FC<Props> = ({ students, activities, evaluations }) 
     }, 600);
   };
 
-  const reset = () => {
-    setResult(null);
-    setExcludedManual([]);
-  };
+const reset = () => {
+  setResult(null);
+  updateExcluded([]);
+};
 
   return (
     <div className="flex gap-6 h-full">
@@ -118,10 +125,12 @@ const LotteryManager: React.FC<Props> = ({ students, activities, evaluations }) 
             <select
               className="w-full p-2.5 border rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50"
               value={selectedActivityId}
-              onChange={e => { 
-  setSelectedActivityId(e.target.value); 
+onChange={e => {
+  const newActivityId = e.target.value;
+  setSelectedActivityId(newActivityId);
   setResult(null);
-  setExcludedManual([]); // Réinitialise les exclusions manuelles à chaque changement d'activité
+  const saved = localStorage.getItem(`lottery_excluded_${newActivityId}`);
+  setExcludedManual(saved ? JSON.parse(saved) : []);
 }}
             >
               <option value="">Aucune activité liée</option>
