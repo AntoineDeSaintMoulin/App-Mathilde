@@ -1,5 +1,11 @@
 export type Subject = 'mathématiques' | 'français';
 
+export type SubjectS1 =
+  | 'géométrie'
+  | 'nombres-algèbre'
+  | 'grandeurs-fonctions'
+  | 'statistiques';
+
 export interface Student {
   id: string;
   firstName: string;
