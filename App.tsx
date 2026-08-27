@@ -73,6 +73,7 @@ const App: React.FC = () => {
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   // ============================================================
   // AUTH
