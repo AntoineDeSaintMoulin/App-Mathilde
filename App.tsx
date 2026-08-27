@@ -11,6 +11,7 @@ import {
   Shuffle,
   Download,
   Upload,
+  LogOut,
 } from 'lucide-react';
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from './types';
 import {
@@ -36,15 +37,37 @@ import StudentProfileModal from './components/StudentProfileModal';
 import NotesManager from './components/NotesManager';
 import LotteryManager from './components/LotteryManager';
 import TeacherDashboard from './components/TeacherDashboard';
+import AuthScreen from './components/AuthScreen';
+import ProfileSetup from './components/ProfileSetup';
+import DevPage from './components/DevPage';
 
 type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'teacher' | 'ia' | 'notes' | 'lottery';
+
+interface UserProfile {
+  id: string;
+  fullName: string;
+  subjects: string[];
+  years: string[];
+}
 
 const EMPTY_DATA: AppData = {
   students: [], activities: [], evaluations: [],
   weeklyComments: [], aiReports: [], notes: [],
 };
 
+// Vérifie si le profil correspond à l'app 1MA (1ère primaire, général ou français/maths)
+const isFirstPrimary = (profile: UserProfile) => {
+  const hasP1 = profile.years.includes('P1');
+  const hasValidSubject = profile.subjects.some(s =>
+    ['général', 'mathématiques', 'français'].includes(s)
+  );
+  return hasP1 && hasValidSubject;
+};
+
 const App: React.FC = () => {
+  const [session, setSession] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [data, setData] = useState<AppData>(EMPTY_DATA);
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
@@ -53,7 +76,56 @@ const App: React.FC = () => {
   const importRef = useRef<HTMLInputElement>(null);
 
   // ============================================================
-  // CHARGEMENT INITIAL + REALTIME
+  // GESTION AUTH — Écoute les changements de session
+  // ============================================================
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) loadProfile(session.user.id);
+      else {
+        setProfile(null);
+        setAuthLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const loadProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) {
+      setProfile(null);
+    } else {
+      setProfile({
+        id: data.id,
+        fullName: data.full_name,
+        subjects: data.subjects || [],
+        years: data.years || [],
+      });
+    }
+    setAuthLoading(false);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+    setData(EMPTY_DATA);
+    setIsLoaded(false);
+  };
+
+  // ============================================================
+  // CHARGEMENT DONNÉES + REALTIME (uniquement si profil 1MA)
   // ============================================================
   const loadAll = useCallback(async () => {
     const result = await fetchAll();
@@ -69,10 +141,11 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (!profile || !isFirstPrimary(profile)) return;
+
     keepAlive();
     loadAll();
 
-    // Realtime — dès qu'une table change dans Supabase, on recharge tout
     const channel = supabase
       .channel('app_mathilde_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, loadAll)
@@ -84,7 +157,7 @@ const App: React.FC = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [loadAll]);
+  }, [profile, loadAll]);
 
   // ============================================================
   // BACKUP AUTOMATIQUE QUOTIDIEN
@@ -107,11 +180,7 @@ const App: React.FC = () => {
     const newStudent = { ...s, id: Math.random().toString(36).substr(2, 9) };
     await dbAddStudent(newStudent);
   };
-
-  const updateStudent = async (updated: Student) => {
-    await dbUpdateStudent(updated);
-  };
-
+  const updateStudent = async (updated: Student) => { await dbUpdateStudent(updated); };
   const deleteStudent = async (id: string) => {
     await dbDeleteEvaluationsForStudent(id);
     await dbDeleteWeeklyCommentsForStudent(id);
@@ -126,11 +195,7 @@ const App: React.FC = () => {
     const newActivity = { ...a, id: Math.random().toString(36).substr(2, 9) };
     await dbAddActivity(newActivity);
   };
-
-  const updateActivity = async (updated: Activity) => {
-    await dbUpdateActivity(updated);
-  };
-
+  const updateActivity = async (updated: Activity) => { await dbUpdateActivity(updated); };
   const deleteActivity = async (id: string) => {
     await dbDeleteEvaluationsForActivity(id);
     await dbDeleteActivity(id);
@@ -140,9 +205,7 @@ const App: React.FC = () => {
   // ÉVALUATIONS
   // ============================================================
   const saveEvaluations = async (evals: Evaluation[]) => {
-    for (const eval_ of evals) {
-      await dbSaveEvaluation(eval_);
-    }
+    for (const eval_ of evals) await dbSaveEvaluation(eval_);
   };
 
   // ============================================================
@@ -170,14 +233,10 @@ const App: React.FC = () => {
     };
     await dbAddNote(newNote);
   };
-
   const updateNote = async (updated: Note) => {
     await dbUpdateNote({ ...updated, updatedAt: new Date().toISOString() });
   };
-
-  const deleteNote = async (id: string) => {
-    await dbDeleteNote(id);
-  };
+  const deleteNote = async (id: string) => { await dbDeleteNote(id); };
 
   // ============================================================
   // IMPORT JSON
@@ -191,19 +250,16 @@ const App: React.FC = () => {
         const parsed = JSON.parse(event.target?.result as string);
         const importedData: AppData = parsed.data || parsed;
         if (!importedData.students || !importedData.activities) {
-          alert('Fichier invalide — ce fichier ne semble pas être un backup 1MA.');
+          alert('Fichier invalide.');
           return;
         }
-        if (!confirm(`Restaurer la sauvegarde du ${new Date(parsed.exportedAt).toLocaleDateString('fr-FR')} ? Toutes les données actuelles seront remplacées.`)) return;
-
-        // Insertion de toutes les données dans Supabase
+        if (!confirm(`Restaurer la sauvegarde du ${new Date(parsed.exportedAt).toLocaleDateString('fr-FR')} ?`)) return;
         for (const s of importedData.students) await dbAddStudent(s);
         for (const a of importedData.activities) await dbAddActivity(a);
         for (const e of importedData.evaluations) await dbSaveEvaluation(e);
         for (const c of importedData.weeklyComments) await dbSaveWeeklyComment(c);
         for (const r of importedData.aiReports) await dbSaveAIReport(r);
         for (const n of importedData.notes) await dbAddNote(n);
-
         alert('Restauration terminée !');
       } catch {
         alert('Erreur — impossible de lire ce fichier JSON.');
@@ -214,8 +270,42 @@ const App: React.FC = () => {
   };
 
   // ============================================================
-  // ÉCRAN DE CHARGEMENT
+  // ROUTING — Selon l'état d'authentification et le profil
   // ============================================================
+
+  // Chargement initial
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4 text-slate-400">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="font-bold text-sm uppercase tracking-widest">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Non connecté → écran de connexion
+  if (!session) return <AuthScreen />;
+
+  // Connecté mais pas de profil → création de profil
+  if (!profile) return (
+    <ProfileSetup
+      userId={session.user.id}
+      onComplete={() => loadProfile(session.user.id)}
+    />
+  );
+
+  // Profil non supporté → page en développement
+  if (!isFirstPrimary(profile)) return (
+    <DevPage
+      fullName={profile.fullName}
+      subjects={profile.subjects}
+      years={profile.years}
+    />
+  );
+
+  // Chargement des données
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -228,7 +318,7 @@ const App: React.FC = () => {
   }
 
   // ============================================================
-  // RENDU
+  // APP PRINCIPALE — Profil 1ère primaire
   // ============================================================
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
@@ -239,7 +329,11 @@ const App: React.FC = () => {
           </div>
           <div className="flex-1">
             <h1 className="font-bold text-2xl leading-tight tracking-tighter">1MA</h1>
-            <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Mathilde Lits</p>
+            <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{profile.fullName}</p>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+            <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-500">Live</span>
           </div>
         </div>
 
@@ -279,9 +373,16 @@ const App: React.FC = () => {
               <Settings size={14} />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">Mathilde Lits</p>
-              <p className="text-slate-500 italic">Enseignante 1MA</p>
+              <p className="text-slate-300 font-bold uppercase tracking-wider text-[10px]">{profile.fullName}</p>
+              <p className="text-slate-500 italic">Enseignant(e)</p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="shrink-0 p-2 text-slate-500 hover:text-red-400 transition-colors"
+              title="Se déconnecter"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         </div>
       </nav>
