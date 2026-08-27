@@ -41,6 +41,8 @@ import AuthScreen from './components/AuthScreen';
 import ProfileSetup from './components/ProfileSetup';
 import DevPage from './components/DevPage';
 
+import AppS1Math from './components/s1math/AppS1Math';
+
 type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'teacher' | 'ia' | 'notes' | 'lottery';
 
 interface UserProfile {
@@ -61,6 +63,9 @@ const isFirstPrimary = (profile: UserProfile) => {
     ['général', 'mathématiques', 'français'].includes(s)
   );
   return hasP1 && hasValidSubject;
+};
+const isS1Math = (profile: UserProfile) => {
+  return profile.years.includes('S1') && profile.subjects.includes('mathématiques');
 };
 
 const App: React.FC = () => {
@@ -311,6 +316,29 @@ const App: React.FC = () => {
     />
   );
 
+if (isS1Math(profile) && isLoaded) return (
+  <AppS1Math
+    profile={profile}
+    data={data}
+    userId={userId}
+    onLogout={handleLogout}
+    onLoadProfile={() => loadProfile(session.user.id)}
+    addStudent={addStudent}
+    updateStudent={updateStudent}
+    deleteStudent={deleteStudent}
+    addActivity={addActivity}
+    updateActivity={updateActivity}
+    deleteActivity={deleteActivity}
+    saveEvaluations={saveEvaluations}
+    saveWeeklyComment={saveWeeklyComment}
+    saveAIReport={saveAIReport}
+    addNote={addNote}
+    updateNote={updateNote}
+    deleteNote={deleteNote}
+    handleImportJSON={handleImportJSON}
+  />
+);
+  
   if (!isFirstPrimary(profile)) return (
     <DevPage
       userId={profile.id}
