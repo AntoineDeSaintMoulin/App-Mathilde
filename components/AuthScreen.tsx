@@ -12,7 +12,7 @@ const AuthScreen: React.FC = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://app-mathilde.vercel.app',
+        redirectTo: 'https://app-mathilde.vercel.app/',
       },
     });
     if (error) {
