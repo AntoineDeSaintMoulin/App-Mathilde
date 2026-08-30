@@ -7,6 +7,7 @@ import {
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../../types';
 import { exportJSON } from '../../utils/storage';
 import { supabase } from '../../utils/supabaseClient';
+import ProfileEditModal from '../components/ProfileEditModal';
 
 import SynthesisViewS1Math from './SynthesisViewS1Math';
 import ActivityManagerS1Math from './ActivityManagerS1Math';
@@ -256,34 +257,16 @@ const AppS1Math: React.FC<Props> = ({
         />
       )}
 
-      {showProfileEdit && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DevPage
-              userId={profile.id}
-              fullName={profile.fullName}
-              subjects={profile.subjects}
-              years={profile.years}
-              onProfileUpdated={() => {
-                onLoadProfile();
-                setShowProfileEdit(false);
-              }}
-              inModal
-            />
-            <div className="p-4 border-t">
-              <button
-                onClick={() => setShowProfileEdit(false)}
-                className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+{showProfileEdit && (
+  <ProfileEditModal
+    userId={profile.id}
+    fullName={profile.fullName}
+    subjects={profile.subjects}
+    years={profile.years}
+    onProfileUpdated={() => loadProfile(session.user.id)}
+    onClose={() => setShowProfileEdit(false)}
+  />
+)}
 
 interface NavItemProps {
   active: boolean;
