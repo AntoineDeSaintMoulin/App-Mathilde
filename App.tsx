@@ -600,6 +600,11 @@ const App: React.FC = () => {
     onClose={() => setShowProfileEdit(false)}
   />
 )}
+    </div>
+  );
+};
+
+export default App;
 
 interface NavItemProps {
   active: boolean;
