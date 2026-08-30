@@ -16,6 +16,7 @@ import {
 } from './utils/storage';
 import { supabase } from './utils/supabaseClient';
 import { keepAlive } from './utils/keepAlive';
+import ProfileEditModal from './components/ProfileEditModal';
 
 import StudentList from './components/StudentList';
 import ActivityManager from './components/ActivityManager';
@@ -590,33 +591,15 @@ const App: React.FC = () => {
       )}
 
       {showProfileEdit && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DevPage
-              userId={profile.id}
-              fullName={profile.fullName}
-              subjects={profile.subjects}
-              years={profile.years}
-              onProfileUpdated={() => {
-                loadProfile(session.user.id);
-                setShowProfileEdit(false);
-              }}
-              inModal
-            />
-            <div className="p-4 border-t">
-              <button
-                onClick={() => setShowProfileEdit(false)}
-                className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
-              >
-                Fermer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+  <ProfileEditModal
+    userId={profile.id}
+    fullName={profile.fullName}
+    subjects={profile.subjects}
+    years={profile.years}
+    onProfileUpdated={() => loadProfile(session.user.id)}
+    onClose={() => setShowProfileEdit(false)}
+  />
+)}
 
 interface NavItemProps {
   active: boolean;
