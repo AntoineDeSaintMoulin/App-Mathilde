@@ -506,7 +506,10 @@ existingClasses = existingClasses.filter(c => expectedLevels.includes(c.level));
 
         <div className="mt-auto pt-6 border-t border-slate-800 space-y-3">
           <div className="flex gap-2 px-2">
-            <button onClick={() => uploadBackup(data, profile.fullName, activeClass?.name || 'inconnu')} className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-wider">
+            <button onClick={async () => {
+  const success = await uploadBackup(data, profile.fullName, activeClass?.name || 'inconnu');
+  alert(success ? '✅ Backup envoyé au serveur !' : '❌ Erreur — backup non envoyé.');
+}} className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-wider">
               <Download size={12} /> Backup
             </button>
             <button onClick={() => importRef.current?.click()} className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-wider">
