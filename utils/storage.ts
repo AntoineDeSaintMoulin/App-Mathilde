@@ -292,20 +292,27 @@ export const dbDeleteNote = async (id: string) => {
 // ============================================================
 // EXPORT JSON
 // ============================================================
-export const exportJSON = (data: any) => {
+export const uploadBackup = async (data: any) => {
+  const date = new Date().toISOString().split('T')[0];
   const backup = {
     exportedAt: new Date().toISOString(),
     version: '2.0',
     data,
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  const date = new Date().toISOString().split('T')[0];
-  link.setAttribute('href', url);
-  link.setAttribute('download', `backup-1MA-${date}.json`);
-  link.style.visibility = 'hidden';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  const formData = new FormData();
+  formData.append('file', blob, `backup-1MA-${date}.json`);
+
+  try {
+    await fetch('https://dsmserver.myqnapcloud.com:5001/api/upload', {
+      method: 'POST',
+      headers: {
+        'X-API-Key': '9waQ2nloFhl4v8kSTk5afvSiPySNKFnSLzN5mHepquY',
+      },
+      body: formData,
+    });
+    console.log('Backup envoyé au serveur');
+  } catch (error) {
+    console.error('Erreur upload backup:', error);
+  }
 };
