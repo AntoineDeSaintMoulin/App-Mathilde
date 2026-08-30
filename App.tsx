@@ -137,14 +137,29 @@ const App: React.FC = () => {
     // Charge les classes existantes
     let existingClasses = await fetchClasses(userId);
 
-    // Si pas de classes, on les crée automatiquement
-    if (existingClasses.length === 0) {
-      const toCreate = generateClasses(userProfile);
-      for (const c of toCreate) {
-        const created = await createClass(userId, c.name, c.level, c.subject);
-        if (created) existingClasses.push(created);
-      }
-    }
+// Synchronise les classes avec le profil
+const expectedLevels = userProfile.years;
+const existingLevels = existingClasses.map(c => c.level);
+
+// Supprime les classes qui ne sont plus dans le profil
+for (const c of existingClasses) {
+  if (!expectedLevels.includes(c.level)) {
+    await supabase.from('classes').delete().eq('id', c.id);
+  }
+}
+
+// Crée les classes manquantes
+for (const year of expectedLevels) {
+  if (!existingLevels.includes(year)) {
+    const levelLabel = year.startsWith('P') ? `${year.slice(1)}ère Primaire` : `${year.slice(1)}ère Secondaire`;
+    const subject = userProfile.subjects[0] || 'général';
+    const created = await createClass(userId, levelLabel, year, subject);
+    if (created) existingClasses.push(created);
+  }
+}
+
+// Refiltre après synchronisation
+existingClasses = existingClasses.filter(c => expectedLevels.includes(c.level));
 
     setClasses(existingClasses);
     setActiveClass(existingClasses[0] || null);
