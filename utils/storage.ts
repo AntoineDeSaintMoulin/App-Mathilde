@@ -292,8 +292,12 @@ export const dbDeleteNote = async (id: string) => {
 // ============================================================
 // EXPORT JSON
 // ============================================================
-export const uploadBackup = async (data: any) => {
+export const uploadBackup = async (data: any, profName: string, className: string) => {
   const date = new Date().toISOString().split('T')[0];
+  const safeProfName = profName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+  const safeClassName = className.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+  const filename = `${safeProfName}_${safeClassName}_${date}.json`;
+
   const backup = {
     exportedAt: new Date().toISOString(),
     version: '2.0',
@@ -301,7 +305,21 @@ export const uploadBackup = async (data: any) => {
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
   const formData = new FormData();
-  formData.append('file', blob, `backup-1MA-${date}.json`);
+  formData.append('file', blob, filename);
+
+  try {
+    await fetch('https://dsmserver.myqnapcloud.com:5001/api/upload', {
+      method: 'POST',
+      headers: {
+        'X-API-Key': '9waQ2nloFhl4v8kSTk5afvSiPySNKFnSLzN5mHepquY',
+      },
+      body: formData,
+    });
+    console.log(`Backup envoyé : ${filename}`);
+  } catch (error) {
+    console.error('Erreur upload backup:', error);
+  }
+};
 
   try {
     await fetch('https://dsmserver.myqnapcloud.com:5001/api/upload', {
