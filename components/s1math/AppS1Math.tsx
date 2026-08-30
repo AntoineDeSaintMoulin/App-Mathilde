@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Users, Layers, CalendarDays, LayoutDashboard,
   Sparkles, Settings, GraduationCap, FileText,
-  Shuffle, Download, Upload, LogOut,
+  Shuffle, Download, Upload, LogOut, ChevronDown,
 } from 'lucide-react';
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../../types';
 import { exportJSON } from '../../utils/storage';
@@ -27,10 +27,20 @@ interface UserProfile {
   years: string[];
 }
 
+interface ClassInfo {
+  id: string;
+  name: string;
+  level: string;
+  subject: string;
+}
+
 interface Props {
   profile: UserProfile;
   data: AppData;
   userId: string;
+  classes: ClassInfo[];
+  activeClass: ClassInfo;
+  onChangeClass: (c: ClassInfo) => void;
   onLogout: () => void;
   onLoadProfile: () => void;
   addStudent: (s: Omit<Student, 'id'>) => void;
@@ -51,7 +61,7 @@ interface Props {
 type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'teacher' | 'ia' | 'notes' | 'lottery';
 
 const AppS1Math: React.FC<Props> = ({
-  profile, data, userId, onLogout, onLoadProfile,
+  profile, data, userId, classes, activeClass, onChangeClass, onLogout, onLoadProfile,
   addStudent, updateStudent, deleteStudent,
   addActivity, updateActivity, deleteActivity,
   saveEvaluations, saveWeeklyComment, saveAIReport,
@@ -61,7 +71,42 @@ const AppS1Math: React.FC<Props> = ({
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showClassSelector, setShowClassSelector] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+
+  const ClassSelector = () => (
+    <div className="relative">
+      <button
+        onClick={() => setShowClassSelector(!showClassSelector)}
+        className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all w-full"
+      >
+        <div className="flex-1 text-left">
+          <p className="text-white font-bold text-xs truncate">{activeClass.name}</p>
+        </div>
+        <ChevronDown size={14} className="text-slate-400 shrink-0" />
+      </button>
+      {showClassSelector && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden z-50">
+          {classes.map(c => (
+            <button
+              key={c.id}
+              onClick={() => {
+                onChangeClass(c);
+                setShowClassSelector(false);
+              }}
+              className={`w-full text-left px-4 py-3 text-sm font-bold transition-all ${
+                activeClass.id === c.id
+                  ? 'bg-purple-600 text-white'
+                  : 'text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              {c.name}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden text-slate-900">
@@ -75,6 +120,13 @@ const AppS1Math: React.FC<Props> = ({
             <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{profile.fullName}</p>
           </div>
         </div>
+
+        {classes.length > 1 && (
+          <div className="mb-6">
+            <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Classe active</p>
+            <ClassSelector />
+          </div>
+        )}
 
         <div className="space-y-1 flex-1">
           <NavItem active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<LayoutDashboard size={20} />} label="Synthèse" />
