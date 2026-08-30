@@ -58,18 +58,17 @@ const isS1Math = (profile: UserProfile) => {
 
 // Génère les classes à partir du profil
 const generateClasses = (profile: UserProfile): { name: string; level: string; subject: string }[] => {
-  const classes = [];
-  for (const year of profile.years) {
-    for (const subject of profile.subjects) {
-      const levelLabel = year.startsWith('P') ? `${year.slice(1)}ère Primaire` : `${year.slice(1)}ère Secondaire`;
-      classes.push({
-        name: `${levelLabel} — ${subject}`,
-        level: year,
-        subject,
-      });
-    }
-  }
-  return classes;
+  return profile.years.map(year => {
+    const levelLabel = year.startsWith('P')
+      ? `${year.slice(1)}ère Primaire`
+      : `${year.slice(1)}ère Secondaire`;
+    const subject = profile.subjects[0] || 'général';
+    return {
+      name: levelLabel,
+      level: year,
+      subject,
+    };
+  });
 };
 
 const App: React.FC = () => {
