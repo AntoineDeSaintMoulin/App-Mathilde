@@ -321,15 +321,3 @@ export const uploadBackup = async (data: any, profName: string, className: strin
   }
 };
 
-  try {
-    await fetch('https://dsmserver.myqnapcloud.com:5001/api/upload', {
-      method: 'POST',
-      headers: {
-        'X-API-Key': '9waQ2nloFhl4v8kSTk5afvSiPySNKFnSLzN5mHepquY',
-      },
-      body: formData,
-    });
-    console.log('Backup envoyé au serveur');
-  } catch (error) {
-    console.error('Erreur upload backup:', error);
-  }
