@@ -604,8 +604,6 @@ const App: React.FC = () => {
   );
 };
 
-export default App;
-
 interface NavItemProps {
   active: boolean;
   onClick: () => void;
