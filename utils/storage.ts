@@ -316,8 +316,10 @@ export const uploadBackup = async (data: any, profName: string, className: strin
       body: formData,
     });
     console.log(`Backup envoyé : ${filename}`);
+    return true;
   } catch (error) {
     console.error('Erreur upload backup:', error);
+    return false;
   }
 };
 
