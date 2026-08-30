@@ -5,7 +5,7 @@ import {
   Shuffle, Download, Upload, LogOut, ChevronDown,
 } from 'lucide-react';
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../../types';
-import { exportJSON } from '../../utils/storage';
+import { uploadBackup } from '../../utils/storage';
 import { supabase } from '../../utils/supabaseClient';
 import ProfileEditModal from '../ProfileEditModal';
 
@@ -147,7 +147,7 @@ const AppS1Math: React.FC<Props> = ({
         <div className="mt-auto pt-6 border-t border-slate-800 space-y-3">
           <div className="flex gap-2 px-2">
             <button
-              onClick={() => exportJSON(data)}
+              onClick={() => uploadBackup(data)}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all text-[10px] font-black uppercase tracking-wider"
             >
               <Download size={12} /> Backup
