@@ -333,4 +333,3 @@ export const uploadBackup = async (data: any, profName: string, className: strin
   } catch (error) {
     console.error('Erreur upload backup:', error);
   }
-};
