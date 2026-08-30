@@ -326,7 +326,7 @@ const App: React.FC = () => {
       </button>
 
       {showClassSelector && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden z-50">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden z-50">
           {classes.map(c => (
             <button
               key={c.id}
