@@ -7,7 +7,7 @@ import {
 import { AppData, Student, Activity, Evaluation, WeeklyComment, AIReport, Note } from '../../types';
 import { exportJSON } from '../../utils/storage';
 import { supabase } from '../../utils/supabaseClient';
-import ProfileEditModal from '../components/ProfileEditModal';
+import ProfileEditModal from '../ProfileEditModal';
 
 import SynthesisViewS1Math from './SynthesisViewS1Math';
 import ActivityManagerS1Math from './ActivityManagerS1Math';
