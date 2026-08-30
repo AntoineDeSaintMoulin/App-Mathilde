@@ -266,7 +266,10 @@ const AppS1Math: React.FC<Props> = ({
     onProfileUpdated={() => loadProfile(session.user.id)}
     onClose={() => setShowProfileEdit(false)}
   />
-)}
+    )}
+    </div>
+  );
+};
 
 interface NavItemProps {
   active: boolean;
