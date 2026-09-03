@@ -1,50 +1,55 @@
 import React, { useState } from 'react';
-import { GraduationCap, BookOpen, Calculator, Globe, FlaskConical, Clock, Map, Trophy } from 'lucide-react';
+import { GraduationCap, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '../utils/supabaseClient';
+import { createClass } from '../utils/storage';
+
+interface ClassEntry {
+  year: string;
+  subject: string;
+}
 
 interface Props {
   userId: string;
   onComplete: () => void;
 }
 
-const SUBJECTS = [
-  { value: 'général', label: 'Général', icon: <GraduationCap size={18} /> },
-  { value: 'mathématiques', label: 'Mathématiques', icon: <Calculator size={18} /> },
-  { value: 'français', label: 'Français', icon: <BookOpen size={18} /> },
-  { value: 'néerlandais', label: 'Néerlandais', icon: <Globe size={18} /> },
-  { value: 'sciences', label: 'Sciences', icon: <FlaskConical size={18} /> },
-  { value: 'histoire', label: 'Histoire', icon: <Clock size={18} /> },
-  { value: 'géographie', label: 'Géographie', icon: <Map size={18} /> },
-  { value: 'sport', label: 'Sport', icon: <Trophy size={18} /> },
-];
-
 const PRIMARY_YEARS = [1, 2, 3, 4, 5, 6];
 const SECONDARY_YEARS = [1, 2, 3, 4, 5, 6];
 
+const SUBJECTS = [
+  'Général',
+  'Mathématiques',
+  'Français',
+  'Néerlandais',
+  'Sciences',
+  'Histoire',
+  'Géographie',
+  'Sport',
+];
+
 const ProfileSetup: React.FC<Props> = ({ userId, onComplete }) => {
   const [fullName, setFullName] = useState('');
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [selectedPrimaryYears, setSelectedPrimaryYears] = useState<number[]>([]);
-  const [selectedSecondaryYears, setSelectedSecondaryYears] = useState<number[]>([]);
+  const [classes, setClasses] = useState<ClassEntry[]>([{ year: 'P1', subject: 'Général' }]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const toggleSubject = (value: string) => {
-    setSelectedSubjects(prev =>
-      prev.includes(value) ? prev.filter(s => s !== value) : [...prev, value]
-    );
+  const addClass = () => {
+    setClasses(prev => [...prev, { year: 'P1', subject: 'Général' }]);
   };
 
-  const togglePrimaryYear = (year: number) => {
-    setSelectedPrimaryYears(prev =>
-      prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
-    );
+  const removeClass = (index: number) => {
+    setClasses(prev => prev.filter((_, i) => i !== index));
   };
 
-  const toggleSecondaryYear = (year: number) => {
-    setSelectedSecondaryYears(prev =>
-      prev.includes(year) ? prev.filter(y => y !== year) : [...prev, year]
-    );
+  const updateClass = (index: number, field: keyof ClassEntry, value: string) => {
+    setClasses(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+  };
+
+  const getClassName = (year: string, subject: string) => {
+    const level = year.startsWith('P')
+      ? `${year.slice(1)}ère Primaire`
+      : `${year.slice(1)}ère Secondaire`;
+    return `${level} — ${subject}`;
   };
 
   const handleSubmit = async () => {
@@ -52,34 +57,34 @@ const ProfileSetup: React.FC<Props> = ({ userId, onComplete }) => {
       setError('Veuillez entrer votre nom complet.');
       return;
     }
-    if (selectedSubjects.length === 0) {
-      setError('Veuillez sélectionner au moins une matière.');
-      return;
-    }
-    if (selectedPrimaryYears.length === 0 && selectedSecondaryYears.length === 0) {
-      setError('Veuillez sélectionner au moins une année.');
+    if (classes.length === 0) {
+      setError('Veuillez ajouter au moins une classe.');
       return;
     }
 
     setLoading(true);
     setError(null);
 
-    const years = [
-      ...selectedPrimaryYears.map(y => `P${y}`),
-      ...selectedSecondaryYears.map(y => `S${y}`),
-    ];
-
-    const { error } = await supabase.from('profiles').insert({
+    // Créer le profil
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: userId,
       full_name: fullName.trim(),
-      subjects: selectedSubjects,
-      years,
     });
 
-    if (error) {
-      setError('Erreur lors de la création du profil. Veuillez réessayer.');
+    if (profileError) {
+      setError('Erreur lors de la création du profil.');
       setLoading(false);
       return;
+    }
+
+    // Créer chaque classe
+    for (const c of classes) {
+      await createClass(
+        userId,
+        getClassName(c.year, c.subject),
+        c.year,
+        c.subject.toLowerCase()
+      );
     }
 
     onComplete();
@@ -90,12 +95,12 @@ const ProfileSetup: React.FC<Props> = ({ userId, onComplete }) => {
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-2xl flex flex-col gap-8">
 
         {/* Header */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-3">
           <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-500/20">
             <GraduationCap size={32} className="text-white" />
           </div>
           <h1 className="font-black text-2xl text-slate-900 tracking-tighter">Créez votre profil</h1>
-          <p className="text-slate-400 text-sm text-center">Ces informations permettront de personnaliser votre espace.</p>
+          <p className="text-slate-400 text-sm text-center">Ajoutez vos classes pour personnaliser votre espace.</p>
         </div>
 
         {/* Nom complet */}
@@ -112,75 +117,78 @@ const ProfileSetup: React.FC<Props> = ({ userId, onComplete }) => {
           />
         </div>
 
-        {/* Matières */}
-        <div className="space-y-3">
+        {/* Classes */}
+        <div className="space-y-4">
           <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Vos matières
+            Vos classes
           </label>
-          <div className="flex flex-wrap gap-2">
-            {SUBJECTS.map(s => (
-              <button
-                key={s.value}
-                onClick={() => toggleSubject(s.value)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
-                  selectedSubjects.includes(s.value)
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {s.icon} {s.label}
-              </button>
-            ))}
-          </div>
+
+          {classes.map((c, index) => (
+            <div key={index} className="flex gap-3 items-center bg-slate-50 p-4 rounded-2xl border">
+              <div className="flex-1 flex gap-3">
+                {/* Année */}
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Année</label>
+                  <select
+                    className="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm font-bold"
+                    value={c.year}
+                    onChange={e => updateClass(index, 'year', e.target.value)}
+                  >
+                    <optgroup label="Primaire">
+                      {PRIMARY_YEARS.map(y => (
+                        <option key={`P${y}`} value={`P${y}`}>{y}ère Primaire</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Secondaire">
+                      {SECONDARY_YEARS.map(y => (
+                        <option key={`S${y}`} value={`S${y}`}>{y}ère Secondaire</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Matière */}
+                <div className="flex-1 space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Matière</label>
+                  <select
+                    className="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white text-sm font-bold"
+                    value={c.subject}
+                    onChange={e => updateClass(index, 'subject', e.target.value)}
+                  >
+                    {SUBJECTS.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Aperçu */}
+              <div className="hidden md:block text-xs text-slate-400 italic w-40 text-center">
+                {getClassName(c.year, c.subject)}
+              </div>
+
+              {/* Supprimer */}
+              {classes.length > 1 && (
+                <button
+                  onClick={() => removeClass(index)}
+                  className="p-2 text-slate-300 hover:text-red-500 transition-colors shrink-0"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+          ))}
+
+          {/* Ajouter une classe */}
+          <button
+            onClick={addClass}
+            className="w-full py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-all font-bold text-sm flex items-center justify-center gap-2"
+          >
+            <Plus size={16} /> Ajouter une classe
+          </button>
         </div>
 
-        {/* Années primaire */}
-        <div className="space-y-3">
-          <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Années — Primaire
-          </label>
-          <div className="flex gap-2">
-            {PRIMARY_YEARS.map(y => (
-              <button
-                key={y}
-                onClick={() => togglePrimaryYear(y)}
-                className={`w-12 h-12 rounded-xl font-black text-sm transition-all ${
-                  selectedPrimaryYears.includes(y)
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {y}P
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Années secondaire */}
-        <div className="space-y-3">
-          <label className="text-xs font-black uppercase tracking-widest text-slate-400">
-            Années — Secondaire
-          </label>
-          <div className="flex gap-2">
-            {SECONDARY_YEARS.map(y => (
-              <button
-                key={y}
-                onClick={() => toggleSecondaryYear(y)}
-                className={`w-12 h-12 rounded-xl font-black text-sm transition-all ${
-                  selectedSecondaryYears.includes(y)
-                    ? 'bg-indigo-600 text-white shadow-md'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {y}S
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {error && (
-          <p className="text-red-500 text-sm text-center">{error}</p>
-        )}
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
 
         {/* Bouton */}
         <button
