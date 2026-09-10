@@ -38,8 +38,6 @@ type Tab = 'dashboard' | 'activites' | 'eleves' | 'hebdo' | 'teacher' | 'ia' | '
 interface UserProfile {
   id: string;
   fullName: string;
-  subjects: string[];
-  years: string[];
 }
 
 const EMPTY_DATA: AppData = {
@@ -55,21 +53,6 @@ const isFirstPrimary = (profile: UserProfile) => {
 
 const isS1Math = (profile: UserProfile) => {
   return profile.years.includes('S1') && profile.subjects.includes('mathématiques');
-};
-
-// Génère les classes à partir du profil
-const generateClasses = (profile: UserProfile): { name: string; level: string; subject: string }[] => {
-  return profile.years.map(year => {
-    const levelLabel = year.startsWith('P')
-      ? `${year.slice(1)}ère Primaire`
-      : `${year.slice(1)}ère Secondaire`;
-    const subject = profile.subjects[0] || 'général';
-    return {
-      name: levelLabel,
-      level: year,
-      subject,
-    };
-  });
 };
 
 const App: React.FC = () => {
@@ -126,40 +109,14 @@ const App: React.FC = () => {
       return;
     }
 
-    const userProfile: UserProfile = {
-      id: data.id,
-      fullName: data.full_name,
-      subjects: data.subjects || [],
-      years: data.years || [],
-    };
+const userProfile: UserProfile = {
+  id: data.id,
+  fullName: data.full_name,
+};
     setProfile(userProfile);
 
     // Charge les classes existantes
     let existingClasses = await fetchClasses(userId);
-
-// Synchronise les classes avec le profil
-const expectedLevels = userProfile.years;
-const existingLevels = existingClasses.map(c => c.level);
-
-// Supprime les classes qui ne sont plus dans le profil
-for (const c of existingClasses) {
-  if (!expectedLevels.includes(c.level)) {
-    await supabase.from('classes').delete().eq('id', c.id);
-  }
-}
-
-// Crée les classes manquantes
-for (const year of expectedLevels) {
-  if (!existingLevels.includes(year)) {
-    const levelLabel = year.startsWith('P') ? `${year.slice(1)}ère Primaire` : `${year.slice(1)}ère Secondaire`;
-    const subject = userProfile.subjects[0] || 'général';
-    const created = await createClass(userId, levelLabel, year, subject);
-    if (created) existingClasses.push(created);
-  }
-}
-
-// Refiltre après synchronisation
-existingClasses = existingClasses.filter(c => expectedLevels.includes(c.level));
 
     setClasses(existingClasses);
     setActiveClass(existingClasses[0] || null);
