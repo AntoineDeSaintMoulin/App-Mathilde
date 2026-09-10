@@ -275,12 +275,11 @@ const AppS1Math: React.FC<Props> = ({
   <ProfileEditModal
     userId={profile.id}
     fullName={profile.fullName}
-    subjects={profile.subjects}
-    years={profile.years}
-    onProfileUpdated={() => loadProfile(session.user.id)}
+    existingClasses={classes}
+    onProfileUpdated={onLoadProfile}
     onClose={() => setShowProfileEdit(false)}
   />
-    )}
+)}
     </div>
   );
 };
