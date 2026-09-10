@@ -608,12 +608,11 @@ existingClasses = existingClasses.filter(c => expectedLevels.includes(c.level));
         />
       )}
 
-      {showProfileEdit && (
+{showProfileEdit && (
   <ProfileEditModal
     userId={profile.id}
     fullName={profile.fullName}
-    subjects={profile.subjects}
-    years={profile.years}
+    existingClasses={classes}
     onProfileUpdated={() => loadProfile(session.user.id)}
     onClose={() => setShowProfileEdit(false)}
   />
